@@ -20,6 +20,7 @@ from transform import build_se3_transform
 from interpolate_poses import interpolate_vo_poses, interpolate_ins_poses
 from velodyne import load_velodyne_raw, load_velodyne_binary, velodyne_raw_to_pointcloud
 
+import my_params
 
 def build_pointcloud(lidar_dir, poses_file, extrinsics_dir, start_time, end_time, origin_time=-1):
     """Builds a pointcloud by combining multiple LIDAR scans with odometry information.
@@ -139,9 +140,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Try to add argument manual #
-    args.poses_file = 'D:/GoogleDrive/Data/20140514/vo/vo.csv'
+    args.poses_file = my_params.dataset_patch + 'vo\\vo.csv'
     args.extrinsics_dir = 'extrinsics'
-    args.laser_dir = 'D:/GoogleDrive/Data/20140514/ldmrs'
+    args.laser_dir = my_params.dataset_patch + 'ldmrs'
     # Try to add argument manual # 
 
     lidar = re.search('(lms_front|lms_rear|ldmrs|velodyne_left|velodyne_right)', args.laser_dir).group(0)

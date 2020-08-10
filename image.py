@@ -17,6 +17,9 @@ from PIL import Image
 from colour_demosaicing import demosaicing_CFA_Bayer_bilinear as demosaic
 import numpy as np
 
+import my_params
+
+
 BAYER_STEREO = 'gbrg'
 BAYER_MONO = 'rggb'
 
@@ -70,8 +73,8 @@ if __name__ == '__main__':
 
     # Set argument
     # parser = arg_parse()
-    args.dir = 'D:/GoogleDrive/Data/20140514/stereo/centre'
-    args.models_dir = 'D:/Workspace/Github/robotcar-dataset-sdk/models'
+    args.dir = my_params.dataset_patch + 'stereo\\centre'
+    args.models_dir = my_params.project_patch + 'models'
     args.scale = 1.0
 
     frames = 0
