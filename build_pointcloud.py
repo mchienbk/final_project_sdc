@@ -48,7 +48,7 @@ def build_pointcloud(lidar_dir, poses_file, extrinsics_dir, start_time, end_time
     lidar = re.search('(lms_front|lms_rear|ldmrs|velodyne_left|velodyne_right)', lidar_dir).group(0)
     timestamps_path = os.path.join(lidar_dir, os.pardir, lidar + '.timestamps')
 
-    print('lidar: ',timestamps_path)
+    # print('lidar: ',timestamps_path)
 
     timestamps = []
     with open(timestamps_path) as timestamps_file:
@@ -79,7 +79,7 @@ def build_pointcloud(lidar_dir, poses_file, extrinsics_dir, start_time, end_time
         poses = interpolate_vo_poses(poses_file, timestamps, origin_time)
 
     # Print test
-    print('poses len',len(poses))
+    # print('poses_len',len(poses))
 
     pointcloud = np.array([[0], [0], [0], [0]])
     if lidar == 'ldmrs':
@@ -133,17 +133,12 @@ if __name__ == "__main__":
     import open3d
 
     parser = argparse.ArgumentParser(description='Build and display a pointcloud')
-    parser.add_argument('--poses_file', type=str, default=None, help='File containing relative or absolute poses')
-    parser.add_argument('--extrinsics_dir', type=str, default=None,
+    parser.add_argument('--poses_file', type=str, default=my_params.poses_file, 
+                        help='File containing relative or absolute poses')
+    parser.add_argument('--extrinsics_dir', type=str, default=my_params.extrinsics_dir,
                         help='Directory containing extrinsic calibrations')
-    parser.add_argument('--laser_dir', type=str, default=None, help='Directory containing LIDAR data')
+    parser.add_argument('--laser_dir', type=str, default=my_params.laser_dir, help='Directory containing LIDAR data')
     args = parser.parse_args()
-
-    # Try to add argument manual #
-    args.poses_file = my_params.dataset_patch + 'vo\\vo.csv'
-    args.extrinsics_dir = 'extrinsics'
-    args.laser_dir = my_params.dataset_patch + 'ldmrs'
-    # Try to add argument manual # 
 
     lidar = re.search('(lms_front|lms_rear|ldmrs|velodyne_left|velodyne_right)', args.laser_dir).group(0)
     timestamps_path = os.path.join(args.laser_dir, os.pardir, lidar + '.timestamps')
