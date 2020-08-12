@@ -11,5 +11,12 @@ poses_file = dataset_patch + 'vo\\vo.csv'
 extrinsics_dir = project_patch + 'extrinsics'
 laser_dir = dataset_patch + 'ldmrs'
 
-image_dir = dataset_patch + 'stereo\\centre'
+camera = 'stereo\\centre'
+camera_name = 'stereo'
+
+image_dir = dataset_patch + camera
 model_dir = project_patch + 'models'
+
+model = model_dir + camera_name
+
+reprocess_image_dir = 'D:\\data\\reprocessed\\img\\' + camera_name

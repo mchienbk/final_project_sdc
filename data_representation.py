@@ -4,6 +4,7 @@ import os
 import cv2
 import numpy as np
 import pandas as pd
+import time
 
 from datetime import datetime as dt
 import matplotlib.pyplot as plt
@@ -129,15 +130,104 @@ def play_gps():
 
     plt.show()
 
+def play_processed_img():
+
+    # Get image    
+    image_dir = my_params.image_dir
+    model_dir = my_params.model_dir
+    reprocess_dir = my_params.reprocess_image_dir
+    camera_name = my_params.camera_name
+    scale = 0.1
+
+    frames = 0
+    start = time.time() 
+    timestamps_path = os.path.join(os.path.join(image_dir, os.pardir, os.pardir, camera_name + '.timestamps'))
+
+    current_chunk = 0
+    timestamps_file = open(timestamps_path)
+    for line in timestamps_file:
+        tokens = line.split()
+        datetime = dt.utcfromtimestamp(int(tokens[0])/1000000)
+        chunk = int(tokens[1])
+
+        filename = os.path.join(reprocess_dir + '//' + tokens[0] + '.png')
+
+        if not os.path.isfile(filename):
+            if chunk != current_chunk:
+                print("Chunk " + str(chunk) + " not found")
+                current_chunk = chunk
+            continue
+
+        current_chunk = chunk
+        
+        # read and resize image
+        img = cv2.imread(filename)
+        width = int(img.shape[1] * scale)
+        height = int(img.shape[0] * scale)
+        dim = (width, height)
+        img = cv2.resize(img, dim, interpolation = cv2.INTER_AREA)
+        
+        cv2.imshow("img",img)
+        key = cv2.waitKey(5)
+        if key & 0xFF == ord('q'):
+            break
+
+        frames += 1
+        print(datetime)
+        print("FPS of the video is {:5.2f}".format( frames / (time.time() - start)))
 
 def play_vo():
+    import numpy.matlib as ml
+    import csv
+    from interpolate_poses import interpolate_poses
+    from transform import build_se3_transform
+
     # Read data
     vo_directory = my_params.project_patch + 'groundtruth\\vo.csv'
 
-    vo = pd.read_csv(vo_directory) 
-    vo.head()
+    H_new=np.identity(4)
+    C_origin=np.zeros((3,1))
+    R_origin=np.identity(3)
+    abs_poses = [ml.identity(4)]
+
+    x_old=(0,0)
+    z_old=(0,0)
+
+    fig = plt.figure()
+    gs = plt.GridSpec(2,3)
+
+    with open(vo_directory) as vo_file:
+        vo_reader = csv.reader(vo_file)
+        headers = next(vo_file)
+
+        for row in vo_reader:
+            timestamp = int(row[0])
+            datetime = dt.utcfromtimestamp(timestamp/1000000)
+            print(datetime)
+
+            xyzrpy = [float(v) for v in row[2:8]]
+            rel_pose = build_se3_transform(xyzrpy)
+            # print('rel pose',rel_pose)
+
+            # abs_pose = abs_poses[-1] * rel_pose
+            # abs_poses.append(abs_pose)
+
+            H_new=H_new@rel_pose
+            x_test=H_new[0,3]
+            z_test=H_new[2,3]
+
+            # print("old: ",(x_old,z_old))
+            # print("new: ",(x_test,z_test))
+            print((x_old,z_old), " : ",(x_test,z_test))
+
+            x_old=x_test
+            z_old=z_test
+
+            plt.plot(x_test,-z_test,'o',color='blue')
+            plt.pause(0.01)
+    plt.show()
 
 if __name__ == "__main__":
     print("Run OK")
 
-    play_vo()
+    play_processed_img()
