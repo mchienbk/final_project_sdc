@@ -1,7 +1,7 @@
 
 
-project_patch = 'D:\\Untitled\\final_project_sdc-master\\'
-dataset_patch = 'D:\\data\\'
+project_patch = 'D:\\Github\\final_project_sdc\\'
+dataset_patch = 'D:\\Dataset\\20140514\\'
 
 # project_patch = "D:\\Github\\final_project_sdc\\"
 # dataset_patch = "D:\\Dataset\\20140514\\"
@@ -19,4 +19,4 @@ model_dir = project_patch + 'models'
 
 model = model_dir + camera_name
 
-reprocess_image_dir = 'D:\\data\\reprocessed\\img\\' + camera_name
+reprocess_image_dir = image_dir + '_processed'

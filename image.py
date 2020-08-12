@@ -81,6 +81,7 @@ if __name__ == '__main__':
     camera = re.search('(stereo|mono_(left|right|rear))', args.dir).group(0)
 
     timestamps_path = os.path.join(os.path.join(args.dir, os.pardir, camera + '.timestamps'))
+    print(timestamps_path)
     if not os.path.isfile(timestamps_path):
         timestamps_path = os.path.join(args.dir, os.pardir, os.pardir, camera + '.timestamps')
         if not os.path.isfile(timestamps_path):
@@ -109,7 +110,7 @@ if __name__ == '__main__':
     
         # save image
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        cv2.imwrite(my_params.dataset_patch + 'reprocessed//img//' + str(camera) + '//' + tokens[0] + '.png', img)
+        cv2.imwrite(my_params.reprocess_image_dir + '//' + tokens[0] + '.png', img)
 
         width = int(img.shape[1] * args.scale)
         height = int(img.shape[0] * args.scale)
@@ -117,10 +118,10 @@ if __name__ == '__main__':
         # resize image
         img = cv2.resize(img, dim, interpolation = cv2.INTER_AREA)
 
-        cv2.imshow("img",img)
-        key = cv2.waitKey(1)
-        if key & 0xFF == ord('q'):
-            break
+        # cv2.imshow("img",img)
+        # key = cv2.waitKey(0)
+        # if key & 0xFF == ord('q'):
+        #     break
         frames += 1
 
         print(datetime)

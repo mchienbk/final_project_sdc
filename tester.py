@@ -81,7 +81,7 @@ print("new",(x_test,z_test))
 
 
 ### generate pose from vo test
-
+'''
 H_new=np.identity(4)
 C_origin=np.zeros((3,1))
 R_origin=np.identity(3)
@@ -124,3 +124,9 @@ with open(test_file) as vo_file:
         plt.pause(0.01)
         # plt.legend(['Built-In','Our Code'])
     plt.show()
+'''
+
+
+### CAMERA INSTRINSIC MATRIX 
+
+
