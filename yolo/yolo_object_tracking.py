@@ -15,8 +15,12 @@ import argparse
 from datetime import datetime as dt
 import os
 
+import sys
+sys.path.append('D:/Github/final_project_sdc')
+import my_params
+
 def get_test_input(input_dim, CUDA):
-    img = cv2.imread("D:/Workspace/Github/robotcar-dataset/img/dog-cycle-car.png")
+    img = cv2.imread('yolo/test_img/car.jpg')
     img = cv2.resize(img, (input_dim, input_dim)) 
     img_ =  img[:,:,::-1].transpose((2,0,1))
     img_ = img_[np.newaxis,:,:,:]/255.0
@@ -63,25 +67,21 @@ def arg_parse():
     
     
     parser = argparse.ArgumentParser(description='YOLO v3 Video Detection Module')
-   
-    parser.add_argument("--video", dest = 'video', help = 
-                        "Video to run detection upon",
+
+    parser.add_argument("--video", dest = 'video', help = "Video to run detection upon",
                         default = "video.avi", type = str)
     parser.add_argument("--dataset", dest = "dataset", help = "Dataset on which the network has been trained", default = "pascal")
     parser.add_argument("--confidence", dest = "confidence", help = "Object Confidence to filter predictions", default = 0.5)
     parser.add_argument("--nms_thresh", dest = "nms_thresh", help = "NMS Threshhold", default = 0.4)
-    # parser.add_argument("--cfg", dest = 'cfgfile', help = 
-    #                     "Config file",
-    #                     default = "cfg/yolov3.cfg", type = str)
-    # parser.add_argument("--weights", dest = 'weightsfile', help = 
-    #                     "weightsfile",
-    #                     default = "yolov3.weights", type = str)
+
+    '''
     parser.add_argument("--cfg", dest = 'cfgfile', help = 
                         "Config file",
-                        default = "yolo_cfg/yolov3-tiny.cfg", type = str)
+                        default = "my_params.yolo_cfg", type = str)
     parser.add_argument("--weights", dest = 'weightsfile', help = 
                         "weightsfile",
-                        default = "yolo_weights/yolov3-tiny.weights", type = str)
+                        default = "my_params.yolo_weights", type = str)
+    '''
     parser.add_argument("--reso", dest = 'reso', help = 
                         "Input resolution of the network. Increase to increase accuracy. Decrease to increase speed",
                         default = "416", type = str)
@@ -103,8 +103,8 @@ if __name__ == '__main__':
     bbox_attrs = 5 + num_classes
     
     print("Loading network.....")
-    model = Darknet(args.cfgfile)
-    model.load_weights(args.weightsfile)
+    model = Darknet(my_params.yolo_cfg)
+    model.load_weights(my_params.yolo_weights)
     print("Network successfully loaded")
 
     model.net_info["height"] = args.reso
@@ -120,22 +120,22 @@ if __name__ == '__main__':
     model.eval()
     
     # videofile = args.video
-    cap = cv2.VideoCapture("img\walking.avi")
+    # cap = cv2.VideoCapture("img\walking.avi")
     
-    assert cap.isOpened(), 'Cannot capture source'
+    # assert cap.isOpened(), 'Cannot capture source'
     
     frames = 0
     start = time.time() 
     current_chunk = 0
 
-    timestamps_path = 'D:/GoogleDrive/Data/20140514/stereo.timestamps'
+    timestamps_path = 'D:/Dataset/20140514/stereo.timestamps'
     timestamps_file = open(timestamps_path)
     for line in timestamps_file:
         tokens = line.split()
         datetime = dt.utcfromtimestamp(int(tokens[0])/1000000)
         chunk = int(tokens[1])
         print(tokens)
-        filename = os.path.join('img/stereo/center/', tokens[0] + '.png')
+        filename = os.path.join(my_params.reprocess_image_dir + '\\', tokens[0] + '.png')
         # if not os.path.isfile(filename):
         #     if chunk != current_chunk:
         #         print("Chunk " + str(chunk) + " not found")
@@ -178,8 +178,8 @@ if __name__ == '__main__':
             output[i, [1,3]] = torch.clamp(output[i, [1,3]], 0.0, im_dim[i,0])
             output[i, [2,4]] = torch.clamp(output[i, [2,4]], 0.0, im_dim[i,1])
         
-        classes = load_classes('data/coco.names')
-        colors = pkl.load(open("data/pallete", "rb"))
+        classes = load_classes(my_params.yolo_data + 'coco.names')
+        colors = pkl.load(open(my_params.yolo_data + "pallete", "rb"))
         
         list(map(lambda x: write(x, orig_im), output))
         

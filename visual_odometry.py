@@ -96,9 +96,7 @@ if __name__ == '__main__':
             U=np.array(U)
             V=np.array(V)
             # fix emty data
-            # if (len(U) <= 0 or len(V) <= 0):
-
-
+            
             # fix emty data
             E, _ = cv2.findEssentialMat(U, V, focal=fx, pp=(cx,cy), method=cv2.RANSAC, prob=0.999, threshold=0.5)
             _, cur_R, cur_t, mask = cv2.recoverPose(E, U, V, focal=fx, pp=(cx,cy))        	
