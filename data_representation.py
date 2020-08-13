@@ -183,13 +183,22 @@ def play_vo():
     from transform import build_se3_transform
 
     # Read data
-    vo_directory = my_params.project_patch + 'groundtruth\\vo.csv'
+    # vo_directory = my_params.project_patch + 'groundtruth\\vo.csv'
+    vo_directory = my_params.dataset_patch + 'vo//vo.csv'
 
-    H_new=np.identity(4)
+    # H_new=np.identity(4)
+
     C_origin=np.zeros((3,1))
     R_origin=np.identity(3)
-    abs_poses = [ml.identity(4)]
 
+    # abs_poses = [ml.identity(4)]
+    # fix start point
+    xyzrpy = [0, 0, 0, -0.090749, -0.000226, 4.211563]
+    abs_pose = build_se3_transform(xyzrpy)
+    abs_poses = [abs_pose]
+    H_new = abs_pose
+    print(H_new)
+    # fix start point
     x_old=(0,0)
     z_old=(0,0)
 
@@ -200,10 +209,11 @@ def play_vo():
         vo_reader = csv.reader(vo_file)
         headers = next(vo_file)
 
+        index = 0
         for row in vo_reader:
             timestamp = int(row[0])
             datetime = dt.utcfromtimestamp(timestamp/1000000)
-            print(datetime)
+            # print(datetime)
 
             xyzrpy = [float(v) for v in row[2:8]]
             rel_pose = build_se3_transform(xyzrpy)
@@ -213,21 +223,106 @@ def play_vo():
             # abs_poses.append(abs_pose)
 
             H_new=H_new@rel_pose
-            x_test=H_new[0,3]
-            z_test=H_new[2,3]
+            x_test=H_new[1,3]
+            z_test=H_new[0,3]
 
             # print("old: ",(x_old,z_old))
             # print("new: ",(x_test,z_test))
-            print((x_old,z_old), " : ",(x_test,z_test))
+            # print((x_old,z_old), " : ",(x_test,z_test))
 
             x_old=x_test
             z_old=z_test
+            if (index<500):
+                plt.plot(x_test, z_test,'.',color='red')
+            else:
+                plt.plot(x_test, z_test,'.',color='blue')
+            index = index + 1
+        plt.pause(0.01)
 
-            plt.plot(x_test,-z_test,'o',color='blue')
-            plt.pause(0.01)
     plt.show()
+    cv2.waitKey(0)
+
+def map_extract_from_ins():
+    print('pose_extract_from_ins')
+
+    import numpy.matlib as ml
+    import csv
+    import re
+    import cv2
+    import time
+    from interpolate_poses import interpolate_vo_poses, interpolate_ins_poses
+    from transform import build_se3_transform
+    from camera_model import CameraModel
+
+    # Read data 
+    input_INS = my_params.dataset_patch + 'gps//ins.csv'
+    input_GPS = my_params.dataset_patch + 'gps//gps.csv'
+
+    # model = CameraModel(my_params.model_dir, my_params.image_dir)
+
+    # extrinsics_path = os.path.join(my_params.extrinsics_dir, model.camera + '.txt')
+    # with open(extrinsics_path) as extrinsics_file:
+    #     extrinsics = [float(x) for x in next(extrinsics_file).split(' ')]
+    # G_camera_vehicle = build_se3_transform(extrinsics)
+    # G_camera_posesource = None
+
+    # poses_type = re.search('(vo|ins|rtk)\.csv', input_INS).group(1)
+    # with open(os.path.join(my_params.extrinsics_dir, 'ins.txt')) as extrinsics_file:
+    #     extrinsics = next(extrinsics_file)
+    #     G_camera_posesource = G_camera_vehicle * build_se3_transform([float(x) for x in extrinsics.split(' ')])
+    # print('G_camera_posesource',G_camera_posesource)
+
+    H_new=np.identity(4)
+    abs_poses = [ml.identity(4)]
+    ins_timestamps = [0]
+    use_rtk=False
+
+    x_old=(0,0)
+    z_old=(0,0)
+    fig = plt.figure()
+    gs = plt.GridSpec(2,3)
+
+    # first =  ['5736385.159098', '620163.607591', '-112.107004', '-0.090749', '-0.000226', '4.211563']
+    startpoint = [620163.607591,5736385.159098]
+
+    with open(input_INS) as ins_file:
+        ins_reader = csv.reader(ins_file)
+        headers = next(ins_file)
+
+        # upper_timestamp = max(max(pose_timestamps), origin_timestamp)
+        index = 0
+        for row in ins_reader:
+            timestamp = int(row[0])
+            ins_timestamps.append(timestamp)
+
+            # utm = row[5:8]
+            # rpy = row[12:15] 
+            # xyzrpy = [float(v) for v in utm] + [float(v) for v in rpy]
+            # for i in range(len(xyzrpy)):
+            #     xyzrpy[i] =  xyzrpy[i] - float(first[i])
+            # plt.plot(xyzrpy[1], xyzrpy[0],'o',color='blue')
+            # plt.pause(0.01)  
+
+            x = float(row[6]) - float(startpoint[0])
+            y = float(row[5]) - float(startpoint[1])
+            if (index<1000):
+                plt.plot(x,y,'.',color='red')
+            else:
+                plt.plot(x,y,'.',color='blue')
+            index = index + 1
+    
+    plt.show()
+    
+    cv2.waitKey(0)
+    ins_timestamps = ins_timestamps[1:]
+    abs_poses = abs_poses[1:]
+           
 
 if __name__ == "__main__":
-    print("Run OK")
+    print("Start")
 
-    play_processed_img()
+    # map_extract_from_ins()
+    play_vo()
+
+
+    print("Done!")
