@@ -115,7 +115,7 @@ if not counters_loaded:
     keyframe_locations = np.array(keyframe_locations)
     keyframe_timestamps = np.array(keyframe_timestamps)
     n_keyframes = keyframe_locations.shape[0]
-
+##############################################################
     # read point cloud
     point_cloud_data = open(point_cloud_fname, 'r').readlines()
     point_locations = []
@@ -278,6 +278,8 @@ if not counters_loaded:
 free_thresh = 0.55
 occupied_thresh = 0.50
 
+
+# draw map
 grid_map = np.zeros(grid_res, dtype=np.float32)
 grid_map_thresh = np.zeros(grid_res, dtype=np.uint8)
 for x in xrange(grid_res[0]):
@@ -293,6 +295,8 @@ for x in xrange(grid_res[0]):
         else:
             grid_map_thresh[x, z] = 0
 
+
+### display map
 if resize_factor != 1:
     grid_res_resized = (grid_res[0] * resize_factor, grid_res[1] * resize_factor)
     print 'grid_res_resized: ', grid_res_resized
