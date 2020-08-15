@@ -11,29 +11,36 @@ from camera_model import CameraModel
 from image import load_image
 import my_params
 
-
 np.set_printoptions(suppress=True)
-H = np.identity(4)
 
-final_points=[]
+DRAW_ON_IMAGE = True
+
+output_image_dir = my_params.output_dir+'\\'+ my_params.dataset_no + '\\'
+output_points_patch = my_params.output_dir+'\\'+ my_params.dataset_no + '_vo_points.csv'
 
 if __name__ == '__main__':
+    # Intial data
+    H = np.identity(4)      # intial pose
+    poses = []              # poses list
+    final_points=[]         # positions list
+
+    # First point
+    poses.append(H)
+    final_points.append((0,0))
 
     # Get image    
     image_dir = my_params.image_dir
     model_dir = my_params.model_dir
     reprocess_dir = my_params.reprocess_image_dir
-    scale = 0.1
+    scale = 0.5
 
     width = int(1280 * scale)
     height = int(720 * scale)
     dim = (width, height)
 
-    x_old=(0,0)
-    z_old=(0,0)
-
-    intrinsics_path = model_dir + "/stereo_narrow_left.txt"
-    # lut_path = models_dir + "/stereo_narrow_left_distortion_lut.bin"
+    # Get camera model
+    intrinsics_path = model_dir + "\\stereo_narrow_left.txt"
+    # lut_path = models_dir + "\\stereo_narrow_left_distortion_lut.bin"
     intrinsics = np.loadtxt(intrinsics_path)
     fx = intrinsics[0,0]
     fy = intrinsics[0,1]
@@ -42,33 +49,30 @@ if __name__ == '__main__':
 
 
     fig = plt.figure()
-    gs = plt.GridSpec(2,3)
+    # gs = plt.GridSpec(2,3)
 
     frames = 0
+    current_chunk = 0
     start = time.time() 
 
     camera = re.search('(stereo|mono_(left|right|rear))', image_dir).group(0)
-
     timestamps_path = os.path.join(os.path.join(image_dir, os.pardir, os.pardir, camera + '.timestamps'))
-
-    current_chunk = 0
     timestamps_file = open(timestamps_path)
+    
     for line in timestamps_file:
         tokens = line.split()
         datetime = dt.utcfromtimestamp(int(tokens[0])/1000000)
         chunk = int(tokens[1])
 
         filename = os.path.join(reprocess_dir + '//' + tokens[0] + '.png')
-
         if not os.path.isfile(filename):
             if chunk != current_chunk:
                 print("Chunk " + str(chunk) + " not found")
                 current_chunk = chunk
             continue
-
         current_chunk = chunk
         
-        # read and resize image
+        # Read and resize image
         img_next_frame = cv2.imread(filename)
         img_next_frame= cv2.rectangle(img_next_frame,(np.float32(50),np.float32(np.shape(img_next_frame)[0])),(np.float32(1250),np.float32(800)),(0,0,0),-1)
         img_next_frame = cv2.resize(img_next_frame, dim, interpolation = cv2.INTER_AREA)
@@ -77,7 +81,8 @@ if __name__ == '__main__':
             img_current_frame = img_next_frame
         else:
             sift = cv2.xfeatures2d.SIFT_create()
-            # find the keypoints and descriptors with SIFT
+            
+            # Find the keypoints and descriptors with SIFT
             kp1, des1 = sift.detectAndCompute(img_current_frame,None)
             kp2, des2 = sift.detectAndCompute(img_next_frame,None)
 
@@ -95,11 +100,10 @@ if __name__ == '__main__':
                 V.append((x2,y2))
             U=np.array(U)
             V=np.array(V)
-            # fix emty data
+            # fix emty data #
             # if (len(U) <= 0 or len(V) <= 0):
 
-
-            # fix emty data
+            # fix emty data #
             E, _ = cv2.findEssentialMat(U, V, focal=fx, pp=(cx,cy), method=cv2.RANSAC, prob=0.999, threshold=0.5)
             _, cur_R, cur_t, mask = cv2.recoverPose(E, U, V, focal=fx, pp=(cx,cy))        	
             if np.linalg.det(cur_R)<0:
@@ -107,29 +111,47 @@ if __name__ == '__main__':
         	    cur_t = -cur_t
             new_pose = np.hstack((cur_R, cur_t))
             new_pose = np.vstack((new_pose,np.array([0,0,0,1])))
-            x_old = (H[0][3])
-            z_old = (H[2][3])
+            # x_old = (H[0][3])
+            # z_old = (H[2][3])
             H = H@new_pose
             x_new = (H[0][3])
             z_new = (H[2][3])
             
-            print((x_old,z_old), " : ",(x_new,z_new))
+            # Backup data
+            poses.append(H)
+            final_points.append((x_new,z_new))
+            # print('from ', (x_old,z_old), " to ",(x_new,z_new))
 
-            plt.plot(x_new,-z_new,'o',color='blue')
-            plt.pause(0.01)
+            # Plot trajectory in plt
+            # plt.plot(x_new,-z_new,'.',color='blue')
+            # plt.pause(0.01)
         
-        # plt.show()
-
-        cv2.imshow("img_current_frame",img_current_frame)
-        cv2.imshow("img_next_frame",img_next_frame)
-
-        key = cv2.waitKey(5)
-        if key & 0xFF == ord('q'):
-            break
-
+        # cv2.imshow("img_current_frame",img_current_frame)
+        cv2.imshow("Camera",img_next_frame)
+        
+        # Draw point to image
+        if (DRAW_ON_IMAGE == True):
+            output_frame = img_next_frame
+            if (frames > 0):
+                for (x,y) in V:
+                    output_frame = cv2.circle(output_frame,(int(x),int(y)),1,(0,255,0),thickness=1)
+            cv2.imshow("Output",output_frame)
+            cv2.imwrite(output_image_dir + tokens[0] + '.png',output_frame)
 
 
         frames += 1
         img_current_frame = img_next_frame
-        print(datetime)
-        print("FPS of the video is {:5.2f}".format( frames / (time.time() - start)))
+
+        key = cv2.waitKey(10)
+        if key & 0xFF == ord('q'):
+            break
+        # if (frames > 50): break
+        # print(datetime)
+        # print("FPS of the video is {:5.2f}".format( frames / (time.time() - start)))
+    
+    # Save and quit
+    np.savetxt(output_points_patch, final_points, delimiter=",")
+    print('done!')
+    cv2.destroyAllWindows()
+
+    

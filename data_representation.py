@@ -1,13 +1,10 @@
-
-
 import os
 import cv2
+import time
 import numpy as np
 import pandas as pd
-import time
-
-from datetime import datetime as dt
 import matplotlib.pyplot as plt
+from datetime import datetime as dt
 
 import my_params
 
@@ -15,7 +12,6 @@ import my_params
 # import seaborn as sns
 # from mpl_toolkits.mplot3d import Axes3D
 # from math import *
-
 
 def play_lidar():
    
