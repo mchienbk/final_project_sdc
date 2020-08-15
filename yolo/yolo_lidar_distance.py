@@ -87,13 +87,17 @@ if __name__ == '__main__':
         
     model(get_test_input(inp_dim, CUDA), CUDA)
     model.eval()
-    
+
+# Set input image
     frame = cv2.imread(my_params.yolo_test_img)
     scale = 0.5
     width, height = frame.shape[1], frame.shape[0]
     dim = (int(scale*width), int(scale*height))
     
     frame = cv2.resize(frame,dim)
+
+
+# Set input image
 
     img, orig_im, dim = prep_image(frame, inp_dim)
     im_dim = torch.FloatTensor(dim).repeat(1,2)                        

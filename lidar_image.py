@@ -18,8 +18,8 @@ import my_params
 if __name__ == "__main__":
    
     # Making save
-    fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
-    vw = cv2.VideoWriter('laserrange_image.mp4', fourcc, 30, (1280, 960))
+    # fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
+    # vw = cv2.VideoWriter('laserrange_image.mp4', fourcc, 30, (1280, 960))
 
     lidar = re.search('(lms_front|lms_rear|ldmrs|velodyne_left|velodyne_right)', my_params.laser_dir).group(0)
     lidar_timestamps_path = os.path.join(my_params.dataset_patch, lidar + '.timestamps')
@@ -95,8 +95,8 @@ if __name__ == "__main__":
                 img1= cv2.circle(img1, (x_p, y_p), 1, color, 1) 
                 img2= cv2.circle(img2, (x_p, y_p), 1, color, 1)             
            
-            cv2.imwrite("pointcloud_" + str(i) + ".jpg", img1)
-            cv2.imwrite("image_" + str(i) + ".jpg", img2)
+            cv2.imwrite(my_params.output_dir + "\\" + my_params.dataset_no + "pointcloud_" + str(i) + ".jpg", img1)
+            cv2.imwrite(my_params.output_dir + "\\" + my_params.dataset_no + "image_" + str(i) + ".jpg", img2)
  
             # key = cv2.waitKey(1)
             # if key & 0xFF == ord('q'):

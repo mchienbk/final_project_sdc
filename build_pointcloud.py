@@ -56,7 +56,7 @@ def build_pointcloud(lidar_dir, poses_file, extrinsics_dir, start_time, end_time
             timestamp = int(line.split(' ')[0])
             if start_time <= timestamp <= end_time:
                 timestamps.append(timestamp)
-    print('timestamps: ',len(timestamps))
+    # print('timestamps: ',len(timestamps))
 
     if len(timestamps) == 0:
         raise ValueError("No LIDAR data in the given time bracket.")
@@ -94,7 +94,7 @@ def build_pointcloud(lidar_dir, poses_file, extrinsics_dir, start_time, end_time
                 continue
 
             # Print test
-            print(scan_path)
+            # print(scan_path)
 
             scan_file = open(scan_path)
             scan = np.fromfile(scan_file, np.double)
