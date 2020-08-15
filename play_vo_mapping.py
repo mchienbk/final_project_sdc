@@ -81,54 +81,58 @@ with open(vo_directory) as vo_file:
         vo_map = cv2.circle(vo_map,(x_map,y_map),1,(255,0,0),thickness=1)
 
         #$#$#$#$#$#$#$
-        DRAW_pose=H_new@TEST_pose    # wolrd-cord transform
-        x_TEST_pose=int(float(start_map[0]) + DRAW_pose[1,3])
-        y_TEST_pose=int(float(start_map[1]) - DRAW_pose[0,3])
-        vo_map = cv2.circle(vo_map,(x_TEST_pose,y_TEST_pose),1,(0,255,0),thickness=1)
+        # DRAW_pose=H_new@TEST_pose    # wolrd-cord transform
+        # x_TEST_pose=int(float(start_map[0]) + DRAW_pose[1,3])
+        # y_TEST_pose=int(float(start_map[1]) - DRAW_pose[0,3])
+        # vo_map = cv2.circle(vo_map,(x_TEST_pose,y_TEST_pose),1,(0,255,0),thickness=1)
         #$#$#$#$#$#$#$
         # ----> OK
         
         abs_poses.append(H_new)
 
-        # # Draw pointcloud --------------------------------------
-        # draw_flag = 0
-        # with open(lidar_timestamps_path) as lidar_timestamps_file:
-        #     for _,row in enumerate(lidar_timestamps_file):
-        #         lidar_timestamps = int(row.split(' ')[0])
-        #         if(lidar_timestamps < timestamp):
-        #             continue
+        # Draw pointcloud --------------------------------------
+        draw_flag = 0
+        with open(lidar_timestamps_path) as lidar_timestamps_file:
+            for _,row in enumerate(lidar_timestamps_file):
+                lidar_timestamps = int(row.split(' ')[0])
+                if(lidar_timestamps < timestamp):
+                    continue
                 
-        #         if((lidar_timestamps > timestamp) and (draw_flag == 0)):
-        #             start_time = timestamp
-        #             end_time = timestamp + 5e6
-        #             draw_flag = 1
+                if((lidar_timestamps >= timestamp and draw_flag == 0)):
+                    start_time = timestamp
+                    end_time = timestamp + 5e6
+                    draw_flag = 1
 
-        #         if(lidar_timestamps > end_time):
-        #             break
+                if(lidar_timestamps >= end_time and draw_flag == 1):
+                    print("Cann't find lidar file")
+                    break
 
-        #         if(draw_flag == 1):
-        #             file_path = os.path.join(lidar_folder_path + '\\' + str(lidar_timestamps) + '.bin')
-        #             scan_file = open(file_path)
-        #             objs_data = np.fromfile(scan_file, np.double)
-        #             scan_file.close()
-        #             objs_data = objs_data.reshape((len(objs_data) // 3, 3)).transpose()
+                if(draw_flag == 1):
+                    file_path = os.path.join(lidar_folder_path + '\\' + str(lidar_timestamps) + '.bin')
+                    scan_file = open(file_path)
+                    objs_data = np.fromfile(scan_file, np.double)
+                    scan_file.close()
+                    objs_data = objs_data.reshape((len(objs_data) // 3, 3)).transpose()
 
-        #             # Change one by one pixel  # CV2 image
-        #             for i in range(objs_data.shape[1]):
-        #                 obj_data = [objs_data[0][i],objs_data[1][i],objs_data[2][i],0,0,0]        #xyzrpy
+                    # Change one by one pixel  # CV2 image
+                    for i in range(500):
+                    # for i in range(objs_data.shape[1]):
+                        obj_data = [objs_data[0][i],objs_data[1][i],objs_data[2][i],0,0,0]        #xyzrpy
         #                 # print(obj_data)
-        #                 obj_pose = build_se3_transform(obj_data)
+                        obj_pose = build_se3_transform(obj_data)
 
-        #                 obj_pose=H_new@obj_pose    # wolrd-cord transform
-        #                 x_obj=int(float(start_map[0]) + float(obj_pose[1,3]))
-        #                 y_obj=int(float(start_map[0]) + float(obj_pose[0,3]))
+                        obj_pose=H_new@obj_pose    # wolrd-cord transform
+                        x_obj=int(float(start_map[0]) + float(obj_pose[1,3]))
+                        y_obj=int(float(start_map[1]) - float(obj_pose[0,3]))
+                        vo_map = cv2.circle(vo_map,(x_obj,y_obj),1,(0,255,0),thickness=1)
+                        
+                    # DRAW_pose=H_new@TEST_pose    # wolrd-cord transform
+                    # x_TEST_pose=int(float(start_map[0]) + DRAW_pose[1,3])
+                    # y_TEST_pose=int(float(start_map[1]) - DRAW_pose[0,3])
+                    # vo_map = cv2.circle(vo_map,(x_TEST_pose,y_TEST_pose),1,(0,255,0),thickness=1)
+                    break
 
-
-        #                 vo_map = cv2.circle(vo_map,(x_obj,y_obj),1,(0,255,0),thickness=1)
-                
-        #             break
-                
-        # lidar_timestamps_file.close()
+        lidar_timestamps_file.close()
 
         #     # # Draw angle of laser
         #     # # cv2.line(point_map, (200, 299), (399, 125), (0, 255, 0), thickness=1)
@@ -147,7 +151,7 @@ with open(vo_directory) as vo_file:
 
         index = index + 1
 
-        if (index > 1500):
+        if (index > 1000):
             break
         
 cv2.imshow('vo_map',vo_map)
