@@ -103,7 +103,7 @@ with open(vo_directory) as vo_file:
                     end_time = timestamp + 5e6
                     draw_flag = 1
 
-                if(lidar_timestamps >= end_time and draw_flag == 1):
+                if(lidar_timestamps >= end_time):
                     print("Cann't find lidar file")
                     break
 
@@ -115,8 +115,8 @@ with open(vo_directory) as vo_file:
                     objs_data = objs_data.reshape((len(objs_data) // 3, 3)).transpose()
 
                     # Change one by one pixel  # CV2 image
-                    for i in range(500):
-                    # for i in range(objs_data.shape[1]):
+                    # for i in range(500):
+                    for i in range(objs_data.shape[1]):
                         obj_data = [objs_data[0][i],objs_data[1][i],objs_data[2][i],0,0,0]        #xyzrpy
                         # print(obj_data)
                         obj_pose = build_se3_transform(obj_data)
@@ -151,9 +151,10 @@ with open(vo_directory) as vo_file:
         #     # cv2.waitKey(0)
 
         index = index + 1
-
-        if (index > 1000):
-            break
+        if(draw_flag == 0):
+            print("vo_error: ", index)
+        # if (index > 1000):
+        #     break
         
 cv2.imshow('vo_map',vo_map)
 cv2.waitKey(0)
