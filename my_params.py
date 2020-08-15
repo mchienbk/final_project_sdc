@@ -21,7 +21,14 @@ output_dir = project_patch + 'output'
 model = model_dir + camera_name
 poses_file = dataset_patch + 'vo\\vo.csv'
 
-# Yolo data directory
+# YOLO v3 Video Detection Module
+yolo_video = "video.avi"
+yolo_dataset = "pascal"
+yolo_confidence = 0.5   # default = 0.5 - "Do tin cay" class of output
+yolo_nms_thresh = 0.4   # default = 0.4
 yolo_cfg = project_patch + 'yolo\\cfg\\yolov3.cfg'
 yolo_weights = project_patch + 'yolo\weights\yolov3.weights'
 yolo_data = project_patch +'yolo\\data\\'
+yolo_reso = 416          # default = "416"
+
+yolo_test_img = project_patch + 'yolo\\test_img\\hinh-2.jpg'

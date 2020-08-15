@@ -1,21 +1,22 @@
 from __future__ import division
+import os
+import sys
+import cv2 
 import time
+import random 
 import torch 
 import torch.nn as nn
-from torch.autograd import Variable
 import numpy as np
-import cv2 
+import pandas as pd
+import pickle as pkl
+from torch.autograd import Variable
 from util import *
 from darknet import Darknet
 from preprocess import prep_image, inp_to_image, letterbox_image
-import pandas as pd
-import random 
-import pickle as pkl
-import argparse
 from datetime import datetime as dt
-import os
 
-import sys
+# import argparse
+
 sys.path.append('D:/Github/final_project_sdc')
 import my_params
 
@@ -59,6 +60,7 @@ def write(x, img):
     cv2.putText(img, label, (c1[0], c1[1] + t_size[1] + 4), cv2.FONT_HERSHEY_PLAIN, 1, [225,255,255], 1);
     return img
 
+'''
 def arg_parse():
     """
     Parse arguements to the detect module
@@ -74,30 +76,31 @@ def arg_parse():
     parser.add_argument("--confidence", dest = "confidence", help = "Object Confidence to filter predictions", default = 0.5)
     parser.add_argument("--nms_thresh", dest = "nms_thresh", help = "NMS Threshhold", default = 0.4)
 
-    '''
+  
     parser.add_argument("--cfg", dest = 'cfgfile', help = 
                         "Config file",
                         default = "my_params.yolo_cfg", type = str)
     parser.add_argument("--weights", dest = 'weightsfile', help = 
                         "weightsfile",
                         default = "my_params.yolo_weights", type = str)
-    '''
+
     parser.add_argument("--reso", dest = 'reso', help = 
                         "Input resolution of the network. Increase to increase accuracy. Decrease to increase speed",
                         default = "416", type = str)
     return parser.parse_args()
-
+'''
 
 if __name__ == '__main__':
-    args = arg_parse()
-    confidence = float(args.confidence)
-    nms_thesh = float(args.nms_thresh)
-    start = 0
+    # args = arg_parse()
+    # confidence = float(args.confidence)
+    # nms_thesh = float(args.nms_thresh) 
+    confidence = float(my_params.yolo_confidence)
+    nms_thesh = float(my_params.yolo_nms_thresh)
 
+    start = 0
     CUDA = torch.cuda.is_available()
 
     num_classes = 80
-
     CUDA = torch.cuda.is_available()
     
     bbox_attrs = 5 + num_classes
@@ -107,7 +110,8 @@ if __name__ == '__main__':
     model.load_weights(my_params.yolo_weights)
     print("Network successfully loaded")
 
-    model.net_info["height"] = args.reso
+    # model.net_info["height"] = args.reso
+    model.net_info["height"] = my_params.yolo_reso
     inp_dim = int(model.net_info["height"])
     assert inp_dim % 32 == 0 
     assert inp_dim > 32
@@ -116,79 +120,50 @@ if __name__ == '__main__':
         model.cuda()
         
     model(get_test_input(inp_dim, CUDA), CUDA)
-
     model.eval()
     
-    # videofile = args.video
-    # cap = cv2.VideoCapture("img\walking.avi")
+    frame = cv2.imread(my_params.yolo_test_img)
+    scale = 0.5
+    width, height = frame.shape[1], frame.shape[0]
+    dim = (int(scale*width), int(scale*height))
     
-    # assert cap.isOpened(), 'Cannot capture source'
+    frame = cv2.resize(frame,dim)
+
+    img, orig_im, dim = prep_image(frame, inp_dim)
+    im_dim = torch.FloatTensor(dim).repeat(1,2)                        
     
-    frames = 0
-    start = time.time() 
-    current_chunk = 0
+    if CUDA:
+        im_dim = im_dim.cuda()
+        img = img.cuda()
+    
+    with torch.no_grad():   
+        output = model(Variable(img), CUDA)
+    output = write_results(output, confidence, num_classes, nms = True, nms_conf = nms_thesh)
 
-    timestamps_path = 'D:/Dataset/20140514/stereo.timestamps'
-    timestamps_file = open(timestamps_path)
-    for line in timestamps_file:
-        tokens = line.split()
-        datetime = dt.utcfromtimestamp(int(tokens[0])/1000000)
-        chunk = int(tokens[1])
-        print(tokens)
-        filename = os.path.join(my_params.reprocess_image_dir + '\\', tokens[0] + '.png')
-        # if not os.path.isfile(filename):
-        #     if chunk != current_chunk:
-        #         print("Chunk " + str(chunk) + " not found")
-        #         current_chunk = chunk
-        #     continue
+  
+    im_dim = im_dim.repeat(output.size(0), 1)
+    scaling_factor = torch.min(inp_dim/im_dim,1)[0].view(-1,1)
+    
+    output[:,[1,3]] -= (inp_dim - scaling_factor*im_dim[:,0].view(-1,1))/2
+    output[:,[2,4]] -= (inp_dim - scaling_factor*im_dim[:,1].view(-1,1))/2
+    
+    output[:,1:5] /= scaling_factor
 
-        # current_chunk = chunk
-        print(filename)
-        frame = cv2.imread(filename)
-        
-        img, orig_im, dim = prep_image(frame, inp_dim)
-        im_dim = torch.FloatTensor(dim).repeat(1,2)                        
-        
-        if CUDA:
-            im_dim = im_dim.cuda()
-            img = img.cuda()
-        
-        with torch.no_grad():   
-            output = model(Variable(img), CUDA)
-        output = write_results(output, confidence, num_classes, nms = True, nms_conf = nms_thesh)
+    for i in range(output.shape[0]):
+        output[i, [1,3]] = torch.clamp(output[i, [1,3]], 0.0, im_dim[i,0])
+        output[i, [2,4]] = torch.clamp(output[i, [2,4]], 0.0, im_dim[i,1])
+    
+    classes = load_classes(my_params.yolo_data + 'coco.names')
+    colors = pkl.load(open(my_params.yolo_data + "pallete", "rb"))
 
-        if type(output) == int:
-            frames += 1
-            print("FPS of the video is {:5.2f}".format( frames / (time.time() - start)))
-            cv2.imshow("frame", orig_im)
-            key = cv2.waitKey(1)
-            if key & 0xFF == ord('q'):
-                break
-            continue
-              
-        im_dim = im_dim.repeat(output.size(0), 1)
-        scaling_factor = torch.min(inp_dim/im_dim,1)[0].view(-1,1)
+    list(map(lambda x: write(x, orig_im), output))
         
-        output[:,[1,3]] -= (inp_dim - scaling_factor*im_dim[:,0].view(-1,1))/2
-        output[:,[2,4]] -= (inp_dim - scaling_factor*im_dim[:,1].view(-1,1))/2
-        
-        output[:,1:5] /= scaling_factor
+    cv2.imshow("frame", orig_im)
+    key = cv2.waitKey(0)
+    if key & 0xFF == ord('q'):
+        print('done!')
+        cv2.destroyAllWindows()
 
-        for i in range(output.shape[0]):
-            output[i, [1,3]] = torch.clamp(output[i, [1,3]], 0.0, im_dim[i,0])
-            output[i, [2,4]] = torch.clamp(output[i, [2,4]], 0.0, im_dim[i,1])
-        
-        classes = load_classes(my_params.yolo_data + 'coco.names')
-        colors = pkl.load(open(my_params.yolo_data + "pallete", "rb"))
-        
-        list(map(lambda x: write(x, orig_im), output))
-        
-        
-        cv2.imshow("frame", orig_im)
-        key = cv2.waitKey(1)
-        if key & 0xFF == ord('q'):
-            break
-        frames += 1
-        print("FPS of the video is {:5.2f}".format( frames / (time.time() - start)))   
+
     
 
