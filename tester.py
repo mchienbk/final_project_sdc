@@ -127,6 +127,13 @@ with open(test_file) as vo_file:
 '''
 
 
-### CAMERA INSTRINSIC MATRIX 
+### DRAW IMAGE CV2
 
+img = np.zeros((600,800,3), np.uint8)
+img= cv2.rectangle(img,(np.float32(50),np.float32(100)),(np.float32(100),np.float32(200)),(255,0,0),-1)
+
+# ray = cv2.cvtColor(img,cv2.COLOR_RGB2GRAY)
+cv2.imshow('image', img)
+
+cv2.waitKey(0)
 

@@ -51,7 +51,7 @@ with open(input_INS) as ins_file:
             plt.plot(x,y,'.',color='blue')
         index = index + 1
 
-        if (index>5000):
+        if (index>3000):
             break
 
 plt.show()

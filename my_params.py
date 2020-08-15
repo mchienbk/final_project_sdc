@@ -1,10 +1,10 @@
 
 
-project_patch = 'D:\\Github\\final_project_sdc\\'
-dataset_patch = 'D:\\Dataset\\20151030\\'
+# project_patch = 'D:\\Github\\final_project_sdc\\'
+# dataset_patch = 'D:\\Dataset\\20151030\\'
 
-# project_patch = "D:\\Github\\final_project_sdc\\"
-# dataset_patch = "D:\\Dataset\\20140514\\"
+project_patch = "D:\\Github\\final_project_sdc\\"
+dataset_patch = "D:\\Dataset\\20140514\\"
 
 
 poses_file = dataset_patch + 'vo\\vo.csv'
