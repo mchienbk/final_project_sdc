@@ -118,7 +118,7 @@ with open(vo_directory) as vo_file:
                     for i in range(500):
                     # for i in range(objs_data.shape[1]):
                         obj_data = [objs_data[0][i],objs_data[1][i],objs_data[2][i],0,0,0]        #xyzrpy
-        #                 # print(obj_data)
+                        # print(obj_data)
                         obj_pose = build_se3_transform(obj_data)
 
                         obj_pose=H_new@obj_pose    # wolrd-cord transform
@@ -130,6 +130,7 @@ with open(vo_directory) as vo_file:
                     # x_TEST_pose=int(float(start_map[0]) + DRAW_pose[1,3])
                     # y_TEST_pose=int(float(start_map[1]) - DRAW_pose[0,3])
                     # vo_map = cv2.circle(vo_map,(x_TEST_pose,y_TEST_pose),1,(0,255,0),thickness=1)
+                    
                     break
 
         lidar_timestamps_file.close()
