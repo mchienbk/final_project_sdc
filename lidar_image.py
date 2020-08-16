@@ -43,18 +43,15 @@ if __name__ == "__main__":
     start_time = 0
     end_time = 0
 
-    set_lidar_flg = 0
-    lidar_timestamps_old = 0
-
     # Create a color
     color = [255,0,0]
 
     with open(camera_timestamps_path) as timestamps_file:
         for i, line in enumerate(timestamps_file):
             
-            if (i < 40):
+            if (i < 50):
                 continue
-            if (i > 45):
+            if (i > 55):
                 break
 
             image_timestamp = int(line.split(' ')[0])
@@ -63,12 +60,9 @@ if __name__ == "__main__":
             
             with open(lidar_timestamps_path) as lidar_timestamps_file:
                 for j, row in enumerate(lidar_timestamps_file):
-                    # print("j = ", j)    # Test
                     lidar_timestamps = int(row.split(' ')[0])
-                    # print(lidar_timestamps)
 
                     if (lidar_timestamps > image_timestamp):
-                        # set_lidar_flg = 1
                         start_time = image_timestamp
                         end_time = image_timestamp + 5e6
                         break
