@@ -234,7 +234,7 @@ if __name__ == '__main__':
             # Save output yolo
             np.savetxt(output_yolo_patch + str(image_timestamp) +'.csv', output, delimiter=",")
 
-            key = cv2.waitKey(0)
+            key = cv2.waitKey(1)
             if key & 0xFF == ord('q'): break
 
     timestamps_file.close()
