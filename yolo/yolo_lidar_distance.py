@@ -3,6 +3,7 @@ import os
 import sys
 import cv2 
 import time
+import re
 import random 
 import torch 
 import torch.nn as nn
@@ -15,8 +16,13 @@ from darknet import Darknet
 from preprocess import prep_image, inp_to_image, letterbox_image
 from datetime import datetime as dt
 
+
 sys.path.append('D:/Github/final_project_sdc')
 import my_params
+from build_pointcloud import build_pointcloud
+from transform import build_se3_transform
+from image import load_image
+from camera_model import CameraModel
 
 def get_test_input(input_dim, CUDA):
     img = cv2.imread('yolo/test_img/car.jpg')
@@ -46,9 +52,13 @@ def prep_image(img, inp_dim):
     return img_, orig_im, dim
 
 def write(x, img):
-    c1 = tuple(x[1:3].int())
+    print(x)    # print test
+    c1 = tuple(x[1:3].int())    
+    print(c1)    # print test
     c2 = tuple(x[3:5].int())
-    cls = int(x[-1])
+    print(c2)    # print test
+    cls = int(x[-1])  
+    print(cls)    # print test  
     label = "{0}".format(classes[cls])
     color = random.choice(colors)
     cv2.rectangle(img, c1, c2,color, 1)
@@ -61,6 +71,7 @@ def write(x, img):
 
 if __name__ == '__main__':
 
+    # Yolo intial 
     confidence = float(my_params.yolo_confidence)
     nms_thesh = float(my_params.yolo_nms_thresh)
 
@@ -88,16 +99,77 @@ if __name__ == '__main__':
     model(get_test_input(inp_dim, CUDA), CUDA)
     model.eval()
 
-# Set input image
-    frame = cv2.imread(my_params.yolo_test_img)
-    scale = 0.5
-    width, height = frame.shape[1], frame.shape[0]
-    dim = (int(scale*width), int(scale*height))
+    # Lidar intial and camera pose
+    lidar = re.search('(lms_front|lms_rear|ldmrs|velodyne_left|velodyne_right)', my_params.laser_dir).group(0)
+    lidar_timestamps_path = os.path.join(my_params.dataset_patch, lidar + '.timestamps')
+
+    camera = re.search('(stereo|mono_(left|right|rear))', my_params.image_dir).group(0)
+    camera_timestamps_path = os.path.join(os.path.join(my_params.dataset_patch, camera + '.timestamps'))
+
+    prj_model = CameraModel(my_params.model_dir, my_params.image_dir)
+    poses_file = my_params.poses_file
+    extrinsics_dir  =  my_params.extrinsics_dir
+
+    with open(os.path.join(os.path.join(my_params.extrinsics_dir, camera + '.txt'))) as extrinsics_file:
+        extrinsics = [float(x) for x in next(extrinsics_file).split(' ')]
+    G_camera_vehicle = build_se3_transform(extrinsics)
+    G_camera_posesource = None
+
+    # VO frame and vehicle frame are the same
+    G_camera_posesource = G_camera_vehicle
+
+    # Get image form timestamp
+    with open(camera_timestamps_path) as timestamps_file:
+        for i, line in enumerate(timestamps_file):
+            if (i < 50):
+                continue
+            image_timestamp = int(line.split(' ')[0])
+            image_path = os.path.join(my_params.image_dir, str(image_timestamp) + '.png')
+            image = load_image(image_path, prj_model)
+            
+            print('Image available')
+            # Find correct Lidar data
+            with open(lidar_timestamps_path) as lidar_timestamps_file:
+                for j, row in enumerate(lidar_timestamps_file):
+                    lidar_timestamps = int(row.split(' ')[0])
+
+                    if (lidar_timestamps > image_timestamp):
+                        start_time = image_timestamp
+                        end_time = image_timestamp + 2e6    # default 5e6
+                        print('Lidar available')
+                        break
+            break
+
+    lidar_timestamps_file.close()
+    timestamps_file.close()
+
+    pointcloud, reflectance = build_pointcloud(my_params.laser_dir, poses_file, extrinsics_dir, 
+                                                        start_time, end_time, lidar_timestamps)
+    pointcloud = np.dot(G_camera_posesource, pointcloud)               
+    uv, depth = prj_model.project(pointcloud, image.shape)
+
+    print('Now process with image')
+
+    # Set input image
+    frame_patch = os.path.join(my_params.reprocess_image_dir + '//' + str(image_timestamp) + '.png')
+    frame = cv2.imread(frame_patch)   # must processed imagte
     
-    frame = cv2.resize(frame,dim)
+    # scale = 0.5
+    width, height = frame.shape[1], frame.shape[0]
+    # dim = (int(scale*width), int(scale*height))
+    
+    pframe = frame.copy()
+    pcloud = np.zeros((width, height),dtype=float)
 
-
-# Set input image
+    # Make lidar depth map
+    # print('max depth ', np.max(depth))
+    for k in range(uv.shape[1]):
+        if (depth[k]>50): continue
+        x_lidar = (int)(np.ravel(uv[:,k])[0])
+        y_lidar = (int)(np.ravel(uv[:,k])[1])
+        pcloud[x_lidar][y_lidar] = depth[k]
+    
+    ##### SAVE POINT CLOUD to FILE ?????? ######
 
     img, orig_im, dim = prep_image(frame, inp_dim)
     im_dim = torch.FloatTensor(dim).repeat(1,2)                        
@@ -108,9 +180,8 @@ if __name__ == '__main__':
     
     with torch.no_grad():   
         output = model(Variable(img), CUDA)
-    output = write_results(output, confidence, num_classes, nms = True, nms_conf = nms_thesh)
 
-  
+    output = write_results(output, confidence, num_classes, nms = True, nms_conf = nms_thesh)
     im_dim = im_dim.repeat(output.size(0), 1)
     scaling_factor = torch.min(inp_dim/im_dim,1)[0].view(-1,1)
     
@@ -126,9 +197,21 @@ if __name__ == '__main__':
     classes = load_classes(my_params.yolo_data + 'coco.names')
     colors = pkl.load(open(my_params.yolo_data + "pallete", "rb"))
 
-    list(map(lambda x: write(x, orig_im), output))
-        
-    cv2.imshow("frame", orig_im)
+    # Prediction image 
+    # list(map(lambda x: write(x, orig_im), output))   
+    # cv2.imshow("frame", orig_im)
+
+    # Prediction image with pointcloud
+    for k in range(uv.shape[1]):
+        x_lidar = (int)(np.ravel(uv[:,k])[0])
+        y_lidar = (int)(np.ravel(uv[:,k])[1])
+        color = (int(255-8*depth[k]),255-3*depth[k],50+3*depth[k])
+        pframe= cv2.circle(pframe, (x_lidar, y_lidar), 1, color, 1) 
+    
+    list(map(lambda x: write(x, pframe), output))   
+    cv2.imshow("output", pframe)
+    # cv2.imshow('pframe',pframe)
+
     key = cv2.waitKey(0)
     if key & 0xFF == ord('q'):
         print('done!')
