@@ -173,16 +173,12 @@ if __name__ == "__main__":
     # print("Start")
     # img = cv2.imread('D:\\Github\\final_project_sdc\\yolo\\test_img\\bear.jpg')
     # img, orig_im, dim = prep_image(img, 300)
-    # img = np.array(img)
+    
+    img = np.zeros((240,320),dtype=float)
+    for x in range (200,240):
+        for y in range (250,320):
+            img[x,y] = 255
     # print('dim=',dim)
     # print('shape',img.shape)
-    # # cv2.imshow('img',img)
-    # cv2.waitKey(0)
-    frame = cv2.imread(my_params.yolo_test_img)
-
-    print(my_params.yolo_test_img)
-
-    cv2.imshow('frame',frame)
+    cv2.imshow('img',img)
     cv2.waitKey(0)
-    scale = 0.5
-    print(frame.shape[0])
