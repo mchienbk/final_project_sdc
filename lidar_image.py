@@ -49,9 +49,9 @@ if __name__ == "__main__":
     with open(camera_timestamps_path) as timestamps_file:
         for i, line in enumerate(timestamps_file):
             
-            if (i < 50):
+            if (i < 1572):
                 continue
-            if (i > 55):
+            if (i > 1572):
                 break
 
             image_timestamp = int(line.split(' ')[0])
@@ -63,8 +63,8 @@ if __name__ == "__main__":
                     lidar_timestamps = int(row.split(' ')[0])
 
                     if (lidar_timestamps > image_timestamp):
-                        start_time = image_timestamp
-                        end_time = image_timestamp + 5e6
+                        start_time = image_timestamp - 2e6
+                        end_time = image_timestamp + 2e6
                         break
 
             lidar_timestamps_file.close()
@@ -75,22 +75,21 @@ if __name__ == "__main__":
                         
             uv, depth = model.project(pointcloud, image.shape)
 
-            img2_path = os.path.join(my_params.image_dir + '//' + str(image_timestamp) + '.png')
-            img2 = cv2.imread(img2_path)   # must processed imagte
+            frame_path = os.path.join(my_params.reprocess_image_dir + '//' + str(image_timestamp) + '.png')
+            frame = cv2.imread(frame_path)   # must processed imagte
             # img2 = load_image(img2_path,model)
-            img1 = np.zeros_like(img2)
-
+            pointcloud = np.zeros_like(frame)
 
             for k in range(uv.shape[1]):
                 x_p = (int)(np.ravel(uv[:,k])[0])
                 y_p = (int)(np.ravel(uv[:,k])[1])
 
                 color = (int(255-8*depth[k]),255-3*depth[k],50+3*depth[k])
-                img1= cv2.circle(img1, (x_p, y_p), 1, color, 1) 
-                img2= cv2.circle(img2, (x_p, y_p), 1, color, 1)             
+                pointcloud= cv2.circle(pointcloud, (x_p, y_p), 1, color, 1)
+                frame= cv2.circle(frame, (x_p, y_p), 1, color, 1)
            
-            cv2.imwrite(my_params.output_dir + "\\" + my_params.dataset_no + "pointcloud_" + str(i) + ".jpg", img1)
-            cv2.imwrite(my_params.output_dir + "\\" + my_params.dataset_no + "image_" + str(i) + ".jpg", img2)
+            cv2.imwrite(my_params.output_dir + "\\lidar_image\\" + my_params.dataset_no + "pointcloud_" + str(i) + ".jpg", pointcloud)
+            cv2.imwrite(my_params.output_dir + "\\lidar_image\\" + my_params.dataset_no + "pframe_" + str(i) + ".jpg", frame)
  
             # key = cv2.waitKey(1)
             # if key & 0xFF == ord('q'):

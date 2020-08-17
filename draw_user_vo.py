@@ -41,16 +41,16 @@ if __name__ == '__main__':
             continue
         current_chunk = chunk
 
-        frame = cv2.imread(filename)
-        cv2.imshow('frame',frame)
+        # frame = cv2.imread(filename)
+        # cv2.imshow('frame',frame)
 
 
         # Plot trajectory in plt
         plt.plot(final_points[index][0],-final_points[index][1],'.',color='blue')
-        plt.pause(0.01)
+        plt.pause(1)
         index = index + 1
 
-        key = cv2.waitKey(5)
+        # key = cv2.waitKey(5)
         if key & 0xFF == ord('q'):
             break
 
