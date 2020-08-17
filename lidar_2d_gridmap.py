@@ -26,7 +26,7 @@ from camera_model import CameraModel
 import my_params
 
 
-def project(self, xyz, image_size):
+def spread(xyz):
         """Projects a pointcloud into the camera using a pinhole camera model.
 
         Args:
@@ -42,105 +42,116 @@ def project(self, xyz, image_size):
             project into the image are discarded.
 
         """
+        G_camera_image = []
+        intrinsics_path = os.path.join(my_params.model_dir,'stereo_narrow_right.txt')
+        with open(intrinsics_path) as intrinsics_file:
+            for line in intrinsics_file:
+                G_camera_image.append([float(x) for x in line.split()])
+        G_camera_image = np.array(G_camera_image)
+
         if xyz.shape[0] == 3:       # (4, 34659)
             xyz = np.stack((xyz, np.ones((1, xyz.shape[1]))))
-        xyzw = np.linalg.solve(self.G_camera_image, xyz)
+        xyzw = np.linalg.solve(G_camera_image, xyz)
 
         # Find which points lie in front of the camera
         in_front = [i for i in range(0, xyzw.shape[1]) if xyzw[2, i] >= 0]
         xyzw = xyzw[:, in_front]
 
-        uv = np.vstack((self.focal_length[0] * xyzw[0, :] / xyzw[2, :] + self.principal_point[0],
-                        self.focal_length[1] * xyzw[1, :] / xyzw[2, :] + self.principal_point[1]))
+        # uv = np.vstack((self.focal_length[0] * xyzw[0, :] / xyzw[2, :] + self.principal_point[0],
+        #                 self.focal_length[1] * xyzw[1, :] / xyzw[2, :] + self.principal_point[1]))
 
-        in_img = [i for i in range(0, uv.shape[1])
-                  if 0.5 <= uv[0, i] <= image_size[1] and 0.5 <= uv[1, i] <= image_size[0]]
+        # in_img = [i for i in range(0, uv.shape[1])
+        #           if 0.5 <= uv[0, i] <= image_size[1] and 0.5 <= uv[1, i] <= image_size[0]]
 
-        return uv[:, in_img], np.ravel(xyzw[2, in_img])
-
-
-
+        # return uv[:, in_img], np.ravel(xyzw[2, in_img])
+        return xyzw[0, in_front], xyzw[2, in_front]
 
 
-image_dir = my_params.image_dir
-laser_dir = my_params.laser_dir
-poses_file = my_params.poses_file
-models_dir = my_params.model_dir
-extrinsics_dir = my_params.extrinsics_dir
-image_idx = 1572
-
-model = CameraModel(models_dir, image_dir)
+if __name__ == "__main__":
 
 
-extrinsics_path = os.path.join(extrinsics_dir, model.camera + '.txt')
-with open(extrinsics_path) as extrinsics_file:
-    extrinsics = [float(x) for x in next(extrinsics_file).split(' ')]
+    image_dir = my_params.image_dir
+    laser_dir = my_params.laser_dir
+    poses_file = my_params.poses_file
+    models_dir = my_params.model_dir
+    extrinsics_dir = my_params.extrinsics_dir
+    image_idx = 1572
 
-G_camera_vehicle = build_se3_transform(extrinsics)
-G_camera_posesource = None
-
-# print("G_camera_vehicle",G_camera_vehicle)
-
-poses_type = re.search('(vo|ins|rtk)\.csv', poses_file).group(1)
-if poses_type in ['ins', 'rtk']:
-    with open(os.path.join(extrinsics_dir, 'ins.txt')) as extrinsics_file:
-        extrinsics = next(extrinsics_file)
-        G_camera_posesource = G_camera_vehicle * build_se3_transform([float(x) for x in extrinsics.split(' ')])
-else:
-    # VO frame and vehicle frame are the same
-    G_camera_posesource = G_camera_vehicle
-
-timestamps_path = os.path.join(my_params.dataset_patch + model.camera + '.timestamps')
-
-timestamp = 0
-with open(timestamps_path) as timestamps_file:
-    for i, line in enumerate(timestamps_file):
-        if i == image_idx:
-            # print('index:', i)
-            timestamp = int(line.split(' ')[0])
-            break
-
-# print('index timestamp:', timestamp)
-# print('start time:', start_time)
-# print('end time:', end_time)
-
-pointcloud, reflectance = build_pointcloud(laser_dir, poses_file, extrinsics_dir,
-                                           timestamp - 2e6, timestamp + 2e6, timestamp)
-
-# real point cloud
-xyz = pointcloud[0:3,:]
-print(xyz.shape)
-
-pointcloud = np.dot(G_camera_posesource, pointcloud)
+    model = CameraModel(models_dir, image_dir)
 
 
-image_path = os.path.join(image_dir, str(timestamp) + '.png')
-image = load_image(image_path, model)
+    extrinsics_path = os.path.join(extrinsics_dir, model.camera + '.txt')
+    with open(extrinsics_path) as extrinsics_file:
+        extrinsics = [float(x) for x in next(extrinsics_file).split(' ')]
 
-# Print filename
-# print('image patch: ',image_path)
+    G_camera_vehicle = build_se3_transform(extrinsics)
+    G_camera_posesource = None
 
-uv, depth = model.project(pointcloud, image.shape)
+    # print("G_camera_vehicle",G_camera_vehicle)
 
-# newmap = np.zeros((800,800),dtype=float)
-# plt.imshow(newmap)
-# np.ravel(uv[0, :]),np.ravel(uv[3, :])
-print(uv.shape)
+    poses_type = re.search('(vo|ins|rtk)\.csv', poses_file).group(1)
+    if poses_type in ['ins', 'rtk']:
+        with open(os.path.join(extrinsics_dir, 'ins.txt')) as extrinsics_file:
+            extrinsics = next(extrinsics_file)
+            G_camera_posesource = G_camera_vehicle * build_se3_transform([float(x) for x in extrinsics.split(' ')])
+    else:
+        # VO frame and vehicle frame are the same
+        G_camera_posesource = G_camera_vehicle
 
-# plt.figure(1)
-# plt.imshow(image)
-# plt.scatter(np.ravel(uv[0, :]), np.ravel(uv[1, :]), s=2, c=depth, edgecolors='none', cmap='jet')
-# plt.xlim(0, image.shape[1])
-# plt.ylim(image.shape[0], 0)
-# plt.xticks([])
-# plt.yticks([])
-# plt.show()
+    timestamps_path = os.path.join(my_params.dataset_patch + model.camera + '.timestamps')
 
-# 2D lidar pointcloud image
-# plt.figure(2)
-# plt.scatter(np.ravel(uv[0, :]),np.ravel(depth[:]), s=2, c=depth, edgecolors='none', cmap='jet')
-# plt.show()
-for i in range(xyz.shape[1]):
-    depth = pointcloud[2,i]
-    plt.scatter(pointcloud[0,i],pointcloud[1,i], s=2, c=depth, edgecolors='none', cmap='jet')
-plt.show()
+    timestamp = 0
+    with open(timestamps_path) as timestamps_file:
+        for i, line in enumerate(timestamps_file):
+            if i == image_idx:
+                # print('index:', i)
+                timestamp = int(line.split(' ')[0])
+                break
+
+    # print('index timestamp:', timestamp)
+    # print('start time:', start_time)
+    # print('end time:', end_time)
+
+    pointcloud, reflectance = build_pointcloud(laser_dir, poses_file, extrinsics_dir,
+                                            timestamp - 1e6, timestamp + 1e6, timestamp)
+    pointcloud = np.dot(G_camera_posesource, pointcloud)
+
+
+    image_path = os.path.join(image_dir, str(timestamp) + '.png')
+    image = load_image(image_path, model)
+
+    # Print filename
+    # print('image patch: ',image_path)
+
+    uv, depth = model.project(pointcloud, image.shape)
+
+    # newmap = np.zeros((800,800),dtype=float)
+    # plt.imshow(newmap)
+    # np.ravel(uv[0, :]),np.ravel(uv[3, :])
+
+    # plt.figure(1)
+    # plt.imshow(image)
+    # plt.scatter(np.ravel(uv[0, :]), np.ravel(uv[1, :]), s=2, c=depth, edgecolors='none', cmap='jet')
+    # plt.xlim(0, image.shape[1])
+    # plt.ylim(image.shape[0], 0)
+    # plt.xticks([])
+    # plt.yticks([])
+    # plt.show()
+
+    # 2D lidar pointcloud image
+    # plt.figure(2)
+    # plt.scatter(np.ravel(uv[0, :]),np.ravel(depth[:]), s=2, c=depth, edgecolors='none', cmap='jet')
+    # plt.show()
+
+    _x = pointcloud[0,:]
+    _y = pointcloud[2,:]
+    print(_x.shape)
+    print(_y.shape)
+    for i in range(_x.shape[1]):
+        # print(xyz[0,i],xyz[1,i])
+        # depth = xyz[2,i]
+        # plt.scatter(xyz[0,i],xyz[1,i], s=2, c=depth, edgecolors='none', cmap='jet')
+        # print(_x[0,i],_y[0,i])
+        plt.plot(_x[0,i],_y[0,i],'.',color='blue')
+        # plt.pause(1)
+    plt.show()

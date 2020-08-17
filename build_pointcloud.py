@@ -145,7 +145,7 @@ if __name__ == "__main__":
     with open(timestamps_path) as timestamps_file:
         start_time = int(next(timestamps_file).split(' ')[0])
 
-    end_time = start_time + 2e7
+    end_time = start_time + 5e7
 
     pointcloud, reflectance = build_pointcloud(args.laser_dir, args.poses_file,
                                                args.extrinsics_dir, start_time, end_time)
