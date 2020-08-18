@@ -25,8 +25,8 @@ lidar_folder_path = my_params.laser_dir
 lidar_timestamps_path = my_params.dataset_patch + 'ldmrs.timestamps'
 
 # Making Video
-fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
-vw = cv2.VideoWriter('laser_scan.mp4', fourcc, 30, (600, 800))
+# fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
+# vw = cv2.VideoWriter('laser_scan.mp4', fourcc, 30, (600, 800))
 
 C_origin=np.zeros((3,1))
 R_origin=np.identity(3)
@@ -104,7 +104,7 @@ with open(vo_directory) as vo_file:
                     draw_flag = 1
 
                 if(lidar_timestamps >= end_time):
-                    print("Cann't find lidar file")
+                    print("Can't find lidar file")
                     break
 
                 if(draw_flag == 1):
@@ -153,12 +153,13 @@ with open(vo_directory) as vo_file:
         index = index + 1
         if(draw_flag == 0):
             print("vo_error: ", index)
-        # if (index > 1000):
-        #     break
+        if (index > 100):
+            break
         
 cv2.imshow('vo_map',vo_map)
+cv2.imwrite('output\\vo_map.jpg',vo_map)
 cv2.waitKey(0)
-cv2.imwrite('vo_map.jpg',vo_map)
+
 print('done!')
 cv2.destroyAllWindows()
 

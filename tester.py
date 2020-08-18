@@ -174,11 +174,25 @@ if __name__ == "__main__":
     # img = cv2.imread('D:\\Github\\final_project_sdc\\yolo\\test_img\\bear.jpg')
     # img, orig_im, dim = prep_image(img, 300)
     
-    img = np.zeros((240,320),dtype=float)
-    for x in range (200,240):
-        for y in range (250,320):
-            img[x,y] = 255
-    # print('dim=',dim)
-    # print('shape',img.shape)
-    cv2.imshow('img',img)
-    cv2.waitKey(0)
+    import random
+    data = [[1, 1, 0, 0, 1, 1, 1, 0],
+            [1, 1, 1, 0, 1, 0, 1, 1],
+            [0, 1, 0, 1, 0, 0, 0, 0],
+            [1, 1, 0, 0, 1, 1, 0, 1],
+            [0, 1, 0, 1, 0, 0, 0, 0],
+            [0, 1, 1, 1, 1, 1, 0, 0],
+            [0, 0, 1, 0, 0, 0, 1, 1],
+            [0, 0, 0, 1, 1, 0, 0, 1]]
+    map = np.zeros((100,100),dtype=bool)
+    i = 0; j = 0
+    for i in range(100):
+        for j in range(100):
+            map[i,j] = random.randint(a=0,b=1)
+    print(map[:10,:10])
+
+    # random.randint(a=0,b=1)
+    plt.xticks(size=12,color = "black")
+    plt.yticks(size=12,color = "black")
+    # plt.figure(figsize=(10,10))
+    plt.imshow(map,cmap="plasma")       # True = yellow
+    plt.show()
