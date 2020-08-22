@@ -69,8 +69,8 @@ def play_lidar():
 
 def play_map():
     # Round truth
-    rtk_directory = my_params.project_patch + 'groundtruth\\groundtruth.csv'
-
+    # rtk_directory = my_params.project_patch + 'gt\\gt.csv'
+    rtk_directory = my_params.dataset_patch + 'vo//vo.csv'
     rtk = pd.read_csv(rtk_directory) 
     rtk.head()
 
@@ -189,7 +189,9 @@ def play_vo():
 
     # abs_poses = [ml.identity(4)]
     # fix start point
-    xyzrpy = [0, 0, 0, -0.090749, -0.000226, 4.211563]
+
+    # xyzrpy = [0, 0, 0, -0.090749, -0.000226, 4.211563] 
+    xyzrpy = [0, 0, 0, 0.0128231,-0.0674645,-0.923368707] #2015
     abs_pose = build_se3_transform(xyzrpy)
     abs_poses = [abs_pose]
     H_new = abs_pose
