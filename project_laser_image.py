@@ -28,7 +28,7 @@ import my_params
 parser = argparse.ArgumentParser(description='Project LIDAR data into camera image')
 parser.add_argument('--image_dir', type=str, default=my_params.image_dir, help='Directory containing images')
 parser.add_argument('--laser_dir', type=str, default=my_params.laser_dir, help='Directory containing LIDAR scans')
-parser.add_argument('--poses_file', type=str, default=my_params.poses_file ,help='File containing either INS or VO poses')
+parser.add_argument('--poses_file', type=str, default=my_params.dataset_patch + 'gps//ins.csv' ,help='File containing either INS or VO poses')
 parser.add_argument('--models_dir', type=str, default=my_params.model_dir, help='Directory containing camera models')
 parser.add_argument('--extrinsics_dir', type=str, default=my_params.extrinsics_dir, help='Directory containing sensor extrinsics')
 parser.add_argument('--image_idx', type=int, help='Index of image to display')
@@ -36,7 +36,7 @@ parser.add_argument('--image_idx', type=int, help='Index of image to display')
 args = parser.parse_args()
 
 # Try to add argument manual #
-args.image_idx = 1572
+args.image_idx = 1570
 
 
 model = CameraModel(args.models_dir, args.image_dir)
@@ -80,7 +80,7 @@ print('start time:', start_time)
 print('end time:', end_time)
 
 pointcloud, reflectance = build_pointcloud(args.laser_dir, args.poses_file, args.extrinsics_dir,
-                                           timestamp - 5e6, timestamp + 5e6, timestamp)
+                                           timestamp - 1e6, timestamp + 1e6, timestamp)
 
 pointcloud = np.dot(G_camera_posesource, pointcloud)
 

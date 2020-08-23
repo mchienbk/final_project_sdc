@@ -119,7 +119,7 @@ if __name__ == '__main__':
     # Get image form timestamp
     with open(camera_timestamps_path) as timestamps_file:
         for i, line in enumerate(timestamps_file):
-            if (i < 2155):
+            if (i < 1570):
                 continue
             image_timestamp = int(line.split(' ')[0])
             image_path = os.path.join(my_params.image_dir, str(image_timestamp) + '.png')
@@ -133,7 +133,7 @@ if __name__ == '__main__':
 
                     if (lidar_timestamps > image_timestamp):
                         start_time = image_timestamp
-                        end_time = image_timestamp + 2e6    # default 5e6
+                        end_time = image_timestamp + 5e6    # default 5e6
                         print('Lidar available')
                         break
             break

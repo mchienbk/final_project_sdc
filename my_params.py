@@ -1,6 +1,6 @@
 # Primary patch
-dataset_no = '20151030'
-# dataset_no = '20140514'
+# dataset_no = '20151030'
+dataset_no = '20140514'
 
 project_patch = 'D:\\Github\\final_project_sdc\\'
 dataset_patch = 'D:\\Dataset\\' + dataset_no + '\\'
