@@ -11,8 +11,39 @@ from datetime import datetime as dt
 output_image_dir = my_params.output_dir+'\\'+ my_params.dataset_no + '\\'
 output_points_patch = my_params.output_dir+'\\'+ my_params.dataset_no + '_vo_points.csv'
 
-if __name__ == '__main__':
+# if __name__ == '__main__':
+    
+#     # Round truth
+#     # rtk_directory = my_params.project_patch + 'gt\\gt.csv'
+#     rtk_directory = my_params.dataset_patch + 'rtk\\rtk.csv'
+#     rtk = pd.read_csv(rtk_directory) 
+#     rtk.head()
 
+#     # Get size
+#     BBox = (rtk.easting.min(), rtk.easting.max(), 
+#             rtk.northing.min(),  rtk.northing.max())
+
+#     print(BBox)
+
+#     # image from opestreetmap.org
+#     ruh_m = plt.imread(my_params.project_patch + 'rtk\\rtk.png')
+
+#     fig, ax = plt.subplots()
+#     ax.scatter(rtk.easting, rtk.northing, zorder=1, alpha= 0.2, c='b',marker='.', s=10)
+#     ax.set_title('Mapping 2015-10-30-11-56-36')
+#     ax.set_xlim(BBox[0],BBox[1])
+#     ax.set_ylim(BBox[2],BBox[3])
+#     ax.imshow(ruh_m, zorder=0, extent = BBox, aspect= 'equal')
+
+#     plt.show()
+
+# 5734795.685425566, 620021.4778138875
+
+if __name__ == '__main__':
+    # # Making save
+    # fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
+    # vw = cv2.VideoWriter('output\\visual_odometry.mp4', fourcc, 15, (640, 360))
+    
     # Read trajectory data
     final_points=[]         # positions list
     points=np.genfromtxt(output_points_patch,delimiter = ',')
@@ -28,6 +59,32 @@ if __name__ == '__main__':
     
     current_chunk = 0
     index = 0
+
+# ############################3    # Round truth
+#     rtk_directory = my_params.dataset_patch + 'rtk\\rtk.csv'
+#     rtk = pd.read_csv(rtk_directory) 
+#     rtk.head()
+
+#     # Get size
+#     BBox = (rtk.easting.min(), rtk.easting.max(), 
+#             rtk.northing.min(),  rtk.northing.max())
+
+#     print(BBox)
+
+#     # image from opestreetmap.org
+#     ruh_m = plt.imread(my_params.project_patch + 'rtk\\rtk.png')
+
+#     fig, ax = plt.subplots()
+#     ax.scatter(rtk.easting, rtk.northing, zorder=1, alpha= 0.2, c='b',marker='.', s=10)
+#     ax.set_title('Mapping 2015-10-30-11-56-36')
+#     ax.set_xlim(BBox[0],BBox[1])
+#     ax.set_ylim(BBox[2],BBox[3])
+#     ax.imshow(ruh_m, zorder=0, extent = BBox, aspect= 'equal')
+
+#     y_0 = 5734795.685425566
+#     x_0 = 620021.4778138875
+# ##################################
+
     for line in timestamps_file:
         tokens = line.split()
         datetime = dt.utcfromtimestamp(int(tokens[0])/1000000)
@@ -41,16 +98,16 @@ if __name__ == '__main__':
             continue
         current_chunk = chunk
 
-        # frame = cv2.imread(filename)
-        # cv2.imshow('frame',frame)
-
+        frame = cv2.imread(filename)
+        cv2.imshow('camera',frame)
+        # vw.write(frame)
 
         # Plot trajectory in plt
-        plt.plot(final_points[index][0],-final_points[index][1],'.',color='blue')
-        plt.pause(1)
+        plt.plot(final_points[index][0],-final_points[index][1],'.',color='red')
+        plt.pause(0.01)
         index = index + 1
 
-        # key = cv2.waitKey(5)
+        key = cv2.waitKey(5)
         if key & 0xFF == ord('q'):
             break
 

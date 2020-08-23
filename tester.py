@@ -175,18 +175,18 @@ if __name__ == "__main__":
     # img, orig_im, dim = prep_image(img, 300)
     
     import random
-    data = [[1, 1, 0, 0, 1, 1, 1, 0],
-            [1, 1, 1, 0, 1, 0, 1, 1],
-            [0, 1, 0, 1, 0, 0, 0, 0],
-            [1, 1, 0, 0, 1, 1, 0, 1],
-            [0, 1, 0, 1, 0, 0, 0, 0],
-            [0, 1, 1, 1, 1, 1, 0, 0],
-            [0, 0, 1, 0, 0, 0, 1, 1],
-            [0, 0, 0, 1, 1, 0, 0, 1]]
-    map = np.zeros((100,100),dtype=bool)
+    # data = [[1, 1, 0, 0, 1, 1, 1, 0],
+    #         [1, 1, 1, 0, 1, 0, 1, 1],
+    #         [0, 1, 0, 1, 0, 0, 0, 0],
+    #         [1, 1, 0, 0, 1, 1, 0, 1],
+    #         [0, 1, 0, 1, 0, 0, 0, 0],
+    #         [0, 1, 1, 1, 1, 1, 0, 0],
+    #         [0, 0, 1, 0, 0, 0, 1, 1],
+            # [0, 0, 0, 1, 1, 0, 0, 1]]
+    map = np.zeros((100,50),dtype=bool)
     i = 0; j = 0
     for i in range(100):
-        for j in range(100):
+        for j in range(50):
             map[i,j] = random.randint(a=0,b=1)
     print(map[:10,:10])
 
@@ -195,4 +195,8 @@ if __name__ == "__main__":
     plt.yticks(size=12,color = "black")
     # plt.figure(figsize=(10,10))
     plt.imshow(map,cmap="plasma")       # True = yellow
+    plt.gca().invert_yaxis()
+    
     plt.show()
+
+    

@@ -9,6 +9,8 @@ import time
 from datetime import datetime as dt
 from camera_model import CameraModel
 from image import load_image
+from transform import build_se3_transform
+
 import my_params
 
 np.set_printoptions(suppress=True)
@@ -20,14 +22,23 @@ output_points_patch = my_params.output_dir+'\\'+ my_params.dataset_no + '_vo_poi
 
 if __name__ == '__main__':
     # Intial data
-    H = np.identity(4)      # intial pose
+    # H = np.identity(4)      # intial pose
+    xyzrpy = [620021.4778138875, 0, 5734795.685425566, 0.0128231,-0.0674645,-0.923368707] #2015
+    H = build_se3_transform(xyzrpy)
+    print(H)
+    # H = np.identity(4)      # intial pose
     poses = []              # poses list
     final_points=[]         # positions list
 
     # First point
     poses.append(H)
-    final_points.append((0,0))
-
+    final_points.append((620021.4778138875, 5734795.685425566))
+ 
+    x_0 = (H[0,3])
+    z_0 = (H[2,3])
+    print(x_0,z_0)
+    plt.plot(x_0,z_0,'o',color='red')
+    plt.show()
     # Get image    
     image_dir = my_params.image_dir
     model_dir = my_params.model_dir
@@ -49,6 +60,7 @@ if __name__ == '__main__':
 
 
     fig = plt.figure()
+    plt.gca().invert_yaxis()
     # gs = plt.GridSpec(2,3)
 
     frames = 0
@@ -114,8 +126,8 @@ if __name__ == '__main__':
             # x_old = (H[0][3])
             # z_old = (H[2][3])
             H = H@new_pose
-            x_new = (H[0][3])
-            z_new = (H[2][3])
+            x_new = (H[0,3])
+            z_new = (H[2,3])
             
             # Backup data
             poses.append(H)
@@ -123,11 +135,11 @@ if __name__ == '__main__':
             # print('from ', (x_old,z_old), " to ",(x_new,z_new))
 
             # Plot trajectory in plt
-            # plt.plot(x_new,-z_new,'.',color='blue')
-            # plt.pause(0.01)
+            plt.plot(x_new,z_new,'.',color='blue')
+            plt.pause(0.01)
         
         # cv2.imshow("img_current_frame",img_current_frame)
-        cv2.imshow("Camera",img_next_frame)
+        # cv2.imshow("Camera",img_next_frame)
         
         # Draw point to image
         if (DRAW_ON_IMAGE == True):
@@ -135,16 +147,16 @@ if __name__ == '__main__':
             if (frames > 0):
                 for (x,y) in V:
                     output_frame = cv2.circle(output_frame,(int(x),int(y)),1,(0,255,0),thickness=1)
-            cv2.imshow("Output",output_frame)
+            # cv2.imshow("Output",output_frame)
             cv2.imwrite(output_image_dir + tokens[0] + '.png',output_frame)
 
 
         frames += 1
         img_current_frame = img_next_frame
 
-        key = cv2.waitKey(10)
-        if key & 0xFF == ord('q'):
-            break
+        # key = cv2.waitKey(5)
+        # if key & 0xFF == ord('q'):
+        #     break
         # if (frames > 50): break
         # print(datetime)
         # print("FPS of the video is {:5.2f}".format( frames / (time.time() - start)))

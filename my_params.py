@@ -1,5 +1,7 @@
 # Primary patch
 dataset_no = '20151030'
+# dataset_no = '20140514'
+
 project_patch = 'D:\\Github\\final_project_sdc\\'
 dataset_patch = 'D:\\Dataset\\' + dataset_no + '\\'
 # dataset_patch = "D:\\Dataset\\20140514\\"
@@ -16,7 +18,10 @@ extrinsics_dir = project_patch + 'extrinsics'
 reprocess_image_dir = image_dir + '_processed'
 output_dir = project_patch + 'output'
 
-
+if (dataset_no== '20151030'):
+    xyzrpy = [0, 0, 0, 0.0128231,-0.0674645,-0.9233687]
+else:
+    xyzrpy = [0, 0, 0, -0.090749, -0.000226, 4.211563]
 # Data file directory
 model = model_dir + camera_name
 poses_file = dataset_patch + 'vo\\vo.csv'
