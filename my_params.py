@@ -1,6 +1,6 @@
 # Primary patch
-# dataset_no = '20151030'
-dataset_no = '20140514'
+dataset_no = '20151030'
+# dataset_no = '20140514'
 
 project_patch = 'D:\\Github\\final_project_sdc\\'
 dataset_patch = 'D:\\Dataset\\' + dataset_no + '\\'
@@ -17,7 +17,7 @@ model_dir = project_patch + 'models'
 extrinsics_dir = project_patch + 'extrinsics'
 reprocess_image_dir = image_dir + '_processed'
 output_dir = project_patch + 'output'
-
+backup_dir = project_patch + 'backup'
 if (dataset_no== '20151030'):
     xyzrpy = [0, 0, 0, 0.0128231,-0.0674645,-0.9233687]
 else:

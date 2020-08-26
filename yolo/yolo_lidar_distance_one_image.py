@@ -123,6 +123,7 @@ if __name__ == '__main__':
                 continue
             image_timestamp = int(line.split(' ')[0])
             image_path = os.path.join(my_params.image_dir, str(image_timestamp) + '.png')
+            print('image_path',image_path)
             image = load_image(image_path, prj_model)
             
             print('Image available')

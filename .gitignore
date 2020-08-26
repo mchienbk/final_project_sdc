@@ -7,3 +7,4 @@
 *.pyc
 output/20151030/*.jpg
 *.png
+*.csv

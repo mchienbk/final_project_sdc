@@ -23,6 +23,8 @@ vo_directory = my_params.dataset_patch + 'vo//vo.csv'
 lidar_folder_path = my_params.laser_dir
 lidar_timestamps_path = my_params.dataset_patch + 'ldmrs.timestamps'
 
+output_dir = my_params.output_dir+'\\lidar_'+ my_params.dataset_no + '\\'
+# output_points_patch = my_params.output_dir+'\\'+ my_params.dataset_no + '\\'#'_lidar_points.csv'
 
 # Making Video
 # fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
@@ -56,7 +58,7 @@ with open(vo_directory) as vo_file:
         # datetime = dt.utcfromtimestamp(timestamp/1000000)
        
         index += 1
-        if index > 2000 : 
+        if index > 3000 : 
             end_time = timestamp
             break
   
@@ -64,7 +66,7 @@ with open(vo_directory) as vo_file:
         rel_pose = build_se3_transform(xyzrpy)
         abs_pose = abs_poses[-1] * rel_pose
         abs_poses.append(abs_pose)
-
+end_time = timestamp
 vo_file.close()
 
 print('num_of_point:', len(abs_poses))
@@ -136,6 +138,10 @@ for i in range(num_of_laser):
     plt.scatter(-x_obj,y_obj,c='r',marker='.', zorder=0)
 
     obj_on_map.append((new_xyz1[0:1,:]))
+
+    # save_to_csv = []
+    save_csv = np.vstack((x_obj,y_obj))
+    np.savetxt((output_dir + str(lidar_timestamps[i]) + '.csv'), save_csv.transpose(), delimiter=",")
 
     
 plt.show()

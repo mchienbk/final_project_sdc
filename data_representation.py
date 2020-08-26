@@ -167,7 +167,8 @@ def play_vo():
 
     # Read data
     vo_directory = my_params.dataset_patch + 'vo\\vo.csv'
-
+    output_image_dir = my_params.output_dir+'\\'+ my_params.dataset_no + '\\'
+    output_points_patch = my_params.output_dir+'\\'+ my_params.dataset_no + '_vo_admin.csv'
 
     # fix start point   
     # abs_pose = [ml.identity(4)]
@@ -189,7 +190,7 @@ def play_vo():
             abs_poses.append(abs_pose)
 
             index += 1
-            # if index > 3000 : break
+            if index > 2000 : break
     vo_file.close()
 
     # abs_quaternions = np.zeros((4, len(abs_poses)))
@@ -216,6 +217,9 @@ def play_vo():
 
     points = np.array(points)
     # print(points.shape)
+
+    # Save and quit
+    np.savetxt(output_points_patch, points, delimiter=",")
 
     BBox = (np.min(points[:,0]), np.max(points[:,0]), 
             np.min(points[:,1]), np.max(points[:,1]))
