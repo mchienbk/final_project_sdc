@@ -36,4 +36,4 @@ yolo_weights = project_patch + 'yolo\weights\yolov3.weights'
 yolo_data = project_patch +'yolo\\data\\'
 yolo_reso = 416          # default = "416"
 
-yolo_test_img = project_patch + 'yolo\\test_img\\hinh-2.jpg'
+yolo_test_img = project_patch + 'yolo\\test_img\\hinh-1.jpg'

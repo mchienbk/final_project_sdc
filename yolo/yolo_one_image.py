@@ -89,11 +89,10 @@ if __name__ == '__main__':
     model.eval()
     
     frame = cv2.imread(my_params.yolo_test_img)
-    scale = 0.5
-    width, height = frame.shape[1], frame.shape[0]
-    dim = (int(scale*width), int(scale*height))
-    
-    frame = cv2.resize(frame,dim)
+    # scale = 0.5
+    # width, height = frame.shape[1], frame.shape[0]
+    # dim = (int(scale*width), int(scale*height))
+    # frame = cv2.resize(frame,dim)
 
     img, orig_im, dim = prep_image(frame, inp_dim)
     im_dim = torch.FloatTensor(dim).repeat(1,2)                        
@@ -119,7 +118,7 @@ if __name__ == '__main__':
         output[i, [1,3]] = torch.clamp(output[i, [1,3]], 0.0, im_dim[i,0])
         output[i, [2,4]] = torch.clamp(output[i, [2,4]], 0.0, im_dim[i,1])
     
-    classes = load_classes(my_params.yolo_data + 'coco.names')
+    classes = load_classes(my_params.yolo_data + 'fix.names')
     colors = pkl.load(open(my_params.yolo_data + "pallete", "rb"))
 
     list(map(lambda x: write(x, orig_im), output))
