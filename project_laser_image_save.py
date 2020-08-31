@@ -17,7 +17,7 @@ import re
 import numpy as np
 import matplotlib.pyplot as plt
 import argparse
-
+import cv2
 from build_pointcloud import build_pointcloud
 from transform import build_se3_transform
 from image import load_image
@@ -26,7 +26,8 @@ from camera_model import CameraModel
 import my_params
 
 image_dir = my_params.image_dir
-laser_dir = my_params.laser_dir
+# laser_dir = my_params.laser_dir
+laser_dir = my_params.lmsfront_dir
 poses_file = my_params.poses_file
 models_dir = my_params.model_dir
 extrinsics_dir = my_params.extrinsics_dir
@@ -64,47 +65,62 @@ with open(timestamps_path) as timestamps_file:
             # timestamp = int(line.split(' ')[0])
             # break
 
-# print('index timestamp:', timestamp)
-# print('start time:', start_time)
-# print('end time:', end_time)
         timestamp = int(line.split(' ')[0])
         start_time = timestamp - 2e6
+        
+        frame_path = os.path.join(my_params.reprocess_image_dir + '//' + str(timestamp) + '.png')
+        frame = cv2.imread(frame_path)   # must processed imagte
         # if start_time < 1446206199046687:
         #     start_time = 1446206199046687
         
         if i < 4: 
-            image_path = os.path.join(image_dir, str(timestamp) + '.png')
-            image = load_image(image_path, model)
-            plt.imshow(image)
-            plt.xlim(0, image.shape[1])
-            plt.ylim(image.shape[0], 0)
-            plt.xticks([])
-            plt.yticks([])
+            # image_path = os.path.join(image_dir, str(timestamp) + '.png')
+            # image = load_image(image_path, model)
+            # plt.imshow(image)
+            # plt.xlim(0, image.shape[1])
+            # plt.ylim(image.shape[0], 0)
+            # plt.xticks([])
+            # plt.yticks([])
 
-            plt.savefig(output_dir + '\\yolo_img_' + my_params.dataset_no + '\\' + str(timestamp) + '.png')
+            # plt.savefig(output_dir + '\\pointcloud_img_' + my_params.dataset_no + '\\' + str(timestamp) + '.png')
+            # savefile_name = output_dir + '\\pointcloud_img_' + my_params.dataset_no + '\\' + str(timestamp) + '.png'
+            savefile_name = output_dir + '\\lms_front_img_' + my_params.dataset_no + '\\' + str(timestamp) + '.png'
+            cv2.imwrite(savefile_name, frame)           
             continue
+
         pointcloud = []
         pointcloud, reflectance = build_pointcloud(laser_dir, poses_file, extrinsics_dir,
                                            start_time, timestamp + 2e6, timestamp)
 
         pointcloud = np.dot(G_camera_posesource, pointcloud)
 
-        image_path = os.path.join(image_dir, str(timestamp) + '.png')
-        image = load_image(image_path, model)
+        # image_path = os.path.join(image_dir, str(timestamp) + '.png')
+        # image = load_image(image_path, model)
+        # uv, depth = model.project(pointcloud, image.shape)
+        uv, depth = model.project(pointcloud, (1280,960,3))
 
-        uv, depth = model.project(pointcloud, image.shape)
+        for k in range(uv.shape[1]):
+            x_p = (int)(np.ravel(uv[:,k])[0])
+            y_p = (int)(np.ravel(uv[:,k])[1])
 
+            color = (int(255-8*depth[k]),255-3*depth[k],50+3*depth[k])
+            pointcloud= cv2.circle(pointcloud, (x_p, y_p), 1, color, 1)
+            frame= cv2.circle(frame, (x_p, y_p), 1, color, 1)
+            # savefile_name = output_dir + '\\pointcloud_img_' + my_params.dataset_no + '\\' + str(timestamp) + '.png'
+            savefile_name = output_dir + '\\lms_front_img_' + my_params.dataset_no + '\\' + str(timestamp) + '.png'
+            cv2.imwrite(savefile_name, frame)
 
-        plt.figure(1)
-        plt.imshow(image)
-        plt.scatter(np.ravel(uv[0, :]), np.ravel(uv[1, :]), s=2, c=depth, edgecolors='none', cmap='jet')
-        plt.xlim(0, image.shape[1])
-        plt.ylim(image.shape[0], 0)
-        plt.xticks([])
-        plt.yticks([])
+        # plt.figure()
+        # plt.imshow(image)
+        # plt.scatter(np.ravel(uv[0, :]), np.ravel(uv[1, :]), s=2, c=depth, edgecolors='none', cmap='jet')
+        # plt.xlim(0, image.shape[1])
+        # plt.ylim(image.shape[0], 0)
+        # plt.xticks([])
+        # plt.yticks([])
 
-        plt.savefig(output_dir + '\\yolo_img_' + my_params.dataset_no + '\\' + str(timestamp) + '.png')
+        # plt.savefig(output_dir + '\\pointcloud_img_' + my_params.dataset_no + '\\' + str(timestamp) + '.png')
         print("save-",i)
+
 # plt.show()
 
 

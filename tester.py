@@ -166,23 +166,50 @@ def prep_image(img, inp_dim):
     img_ = torch.from_numpy(img_).float().div(255.0).unsqueeze(0)
     return img_, orig_im, dim
 
-if __name__ == "__main__":
-    # import torch 
-    # import torch.nn as nn
-    # from torch.autograd import Variable
-    # print("Start")
-    # img = cv2.imread('D:\\Github\\final_project_sdc\\yolo\\test_img\\bear.jpg')
-    # img, orig_im, dim = prep_image(img, 300)
-    
+def get_camera_ins():
+    intrinsics_path = my_params.project_patch + 'models\\stereo_narrow_left.txt'
+
+    with open(intrinsics_path) as intrinsics_file:
+        vals = [float(x) for x in next(intrinsics_file).split()]
+        focal_length = (vals[0], vals[1])
+        principal_point = (vals[2], vals[3])
+
+        G_camera_image = []
+        for line in intrinsics_file:
+            G_camera_image.append([float(x) for x in line.split()])
+        G_camera_image = np.array(G_camera_image)
+
+    print('f1 f2 =', focal_length)
+    print('c1 c2 =', principal_point)
+
+    print('G_camera_image', G_camera_image)
+    G_camera_matrix = np.array([[focal_length[0], 0, principal_point[0]],[0, focal_length[1], principal_point[1]],[0,0,1]])
+    print('G_camera_matrix', G_camera_matrix)
+
+    H = np.dot(G_camera_matrix,G_camera_image[0:3,:])
+    print('H',H)
+
+
+    depth = 49.66
+    v = 489 ; u = 956
+
+    obj_x = (u - principal_point[0])*depth/focal_length[0] 
+    obj_y = (v - principal_point[1])*depth/focal_length[1]
+
+    print(obj_x,obj_y)
+
+    # H[0,2] = 
+    # h =
+    #     [ a, b, c, 0]
+    #     [ d, e, f, 0]
+    #     [ g, h, i, 0]
+    # U = a*x + b*y + c*z
+    # V = d*x + e*y + f*z
+    # 1 = g*x + h*y + i*z
+
+def test_map():
     import random
-    # data = [[1, 1, 0, 0, 1, 1, 1, 0],
-    #         [1, 1, 1, 0, 1, 0, 1, 1],
-    #         [0, 1, 0, 1, 0, 0, 0, 0],
-    #         [1, 1, 0, 0, 1, 1, 0, 1],
-    #         [0, 1, 0, 1, 0, 0, 0, 0],
-    #         [0, 1, 1, 1, 1, 1, 0, 0],
-    #         [0, 0, 1, 0, 0, 0, 1, 1],
-            # [0, 0, 0, 1, 1, 0, 0, 1]]
+
     map = np.zeros((100,50),dtype=bool)
     i = 0; j = 0
     for i in range(100):
@@ -198,5 +225,15 @@ if __name__ == "__main__":
     plt.gca().invert_yaxis()
     
     plt.show()
+
+    
+if __name__ == "__main__":
+
+    get_camera_ins()
+
+    print('Done!')
+    
+
+    
 
     

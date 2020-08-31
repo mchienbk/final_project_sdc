@@ -60,36 +60,7 @@ def write(x, img):
     cv2.putText(img, label, (c1[0], c1[1] + t_size[1] + 4), cv2.FONT_HERSHEY_PLAIN, 1, [225,255,255], 1);
     return img
 
-'''
-def arg_parse():
-    """
-    Parse arguements to the detect module
-    
-    """
-    
-    
-    parser = argparse.ArgumentParser(description='YOLO v3 Video Detection Module')
-
-    parser.add_argument("--video", dest = 'video', help = "Video to run detection upon",
-                        default = "video.avi", type = str)
-    parser.add_argument("--dataset", dest = "dataset", help = "Dataset on which the network has been trained", default = "pascal")
-    parser.add_argument("--confidence", dest = "confidence", help = "Object Confidence to filter predictions", default = 0.5)
-    parser.add_argument("--nms_thresh", dest = "nms_thresh", help = "NMS Threshhold", default = 0.4)
-
-  
-    parser.add_argument("--cfg", dest = 'cfgfile', help = 
-                        "Config file",
-                        default = "my_params.yolo_cfg", type = str)
-    parser.add_argument("--weights", dest = 'weightsfile', help = 
-                        "weightsfile",
-                        default = "my_params.yolo_weights", type = str)
-
-    parser.add_argument("--reso", dest = 'reso', help = 
-                        "Input resolution of the network. Increase to increase accuracy. Decrease to increase speed",
-                        default = "416", type = str)
-    return parser.parse_args()
-'''
-
+SAVE_VIDEO = 1
 if __name__ == '__main__':
     # args = arg_parse()
     # confidence = float(args.confidence)
@@ -128,14 +99,23 @@ if __name__ == '__main__':
 
     scale = 0.5
     width = int(1280 * scale)
-    height = int(720 * scale)
+    height = int(960 * scale)
     dim = (width, height)
+
+    classes = load_classes(my_params.yolo_data + 'fix.names')
+    colors = pkl.load(open(my_params.yolo_data + "pallete", "rb"))
+
+    # Make save
+    if (SAVE_VIDEO):
+        fourcc = cv2.VideoWriter_fourcc('m', 'p', '4', 'v')
+        video = cv2.VideoWriter(my_params.output_dir + '\\yolo_detect.mp4', fourcc, 30, (1280, 960))
 
     timestamps_path = my_params.dataset_patch + 'stereo.timestamps'
     timestamps_file = open(timestamps_path)
     for line in timestamps_file:
         tokens = line.split()
-        datetime = dt.utcfromtimestamp(int(tokens[0])/1000000)
+        # datetime = dt.utcfromtimestamp(int(tokens[0])/1000000)
+        # print(filename)
         chunk = int(tokens[1])
         filename = os.path.join(my_params.reprocess_image_dir + '\\', tokens[0] + '.png')
 
@@ -150,8 +130,8 @@ if __name__ == '__main__':
 
         frame = cv2.imread(filename)
         # resize
-        frame= cv2.rectangle(frame,(np.float32(50),np.float32(np.shape(frame)[0])),(np.float32(1250),np.float32(800)),(0,0,0),-1)
-        frame = cv2.resize(frame,dim)
+        # frame= cv2.rectangle(frame,(np.float32(50),np.float32(np.shape(frame)[0])),(np.float32(1250),np.float32(800)),(0,0,0),-1)
+        # frame = cv2.resize(frame,dim)
         # resize
         img, orig_im, dim = prep_image(frame, inp_dim)
         im_dim = torch.FloatTensor(dim).repeat(1,2)                        
@@ -164,15 +144,6 @@ if __name__ == '__main__':
             output = model(Variable(img), CUDA)
         output = write_results(output, confidence, num_classes, nms = True, nms_conf = nms_thesh)
 
-        # if type(output) == int:
-        #     frames += 1
-        #     print("FPS of the video is {:5.2f}".format( frames / (time.time() - start)))
-        #     cv2.imshow("frame", orig_im)
-        #     key = cv2.waitKey(1)
-        #     if key & 0xFF == ord('q'):
-        #         break
-        #     continue
-              
         im_dim = im_dim.repeat(output.size(0), 1)
         scaling_factor = torch.min(inp_dim/im_dim,1)[0].view(-1,1)
         
@@ -185,19 +156,19 @@ if __name__ == '__main__':
             output[i, [1,3]] = torch.clamp(output[i, [1,3]], 0.0, im_dim[i,0])
             output[i, [2,4]] = torch.clamp(output[i, [2,4]], 0.0, im_dim[i,1])
         
-        classes = load_classes(my_params.yolo_data + 'coco.names')
-        colors = pkl.load(open(my_params.yolo_data + "pallete", "rb"))
-    
         list(map(lambda x: write(x, orig_im), output))
         
         cv2.imshow("frame", orig_im)
         key = cv2.waitKey(1)
-        # if key & 0xFF == ord('q'):
-        #     break
+        if key & 0xFF == ord('q'):
+            break
         frames += 1
         print("FPS of the video is {:5.2f}".format( frames / (time.time() - start)))   
-    
-    
+        
+        # Save save
+        if (SAVE_VIDEO):   
+            video.write(orig_im)
+        
     print('done!')
     cv2.destroyAllWindows()
 

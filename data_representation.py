@@ -295,9 +295,67 @@ def map_extract_from_ins():
     abs_poses = abs_poses[1:]
            
 
+
+# Play LMS Pointcloud 
+def play_lms():
+    # Make save
+    # fourcc = cv2.VideoWriter_fourcc(*'MP4V')
+    # video = cv2.VideoWriter('lms_scan.mp4', fourcc, 30, (800, 600))
+
+    # Load data
+    lms_front_timestamps_path = my_params.dataset_patch + 'lms_front.timestamps'
+    lms_rear_timestamps_path = my_params.dataset_patch + 'lms_rear.timestamps'
+
+    lms_front_folder_path = my_params.dataset_patch + '\\lms_front'
+    lms_rear_folder_path = my_params.dataset_patch + '\\lms_rear'
+
+
+    timestamp = 0
+    with open(lms_front_timestamps_path) as timestamps_file:
+        for i, line in enumerate(timestamps_file):
+            # if (i > 100): break
+
+            timestamp = int(line.split(' ')[0])
+
+            datetime = dt.utcfromtimestamp(timestamp/1000000)
+            # print(datetime)
+
+            file_path = os.path.join(lms_front_folder_path + '\\' + str(timestamp) + '.bin')
+            scan_file = open(file_path)
+
+            data = np.fromfile(scan_file, np.double)
+            scan_file.close()
+            data = data.reshape((len(data) // 3, 3)).transpose()
+
+            # Create a color
+            color = [255,0,0]
+
+            # Blank image
+            img = np.zeros((600,800,3),np.uint8)
+
+            # Change one by one pixel
+            for i in range(data.shape[1]):
+                v = 600+25*data[0][i]
+                u = 400+25*data[1][i]
+                if  (v >= 20) and (v <= 599) and (u >= 0) and (u <= 799) :
+                    img[(int(v)),(int(u))]=color
+
+                # if (y < -400) : y = -399 
+                # if (y > 400) : y = 399 
+                # img[600-(int(x)),(int(y)) + 400]=color
+            # Save
+            cv2.imshow("result",img)
+            # video.write(img)
+
+            if cv2.waitKey(5) & 0xFF == ord('q'):
+                break
+    # video.release()
+    cv2.destroyAllWindows()
+#######################
+
 if __name__ == "__main__":
     print("Start")
 
-    play_vo()
+    play_lms()
 
     print("Done!")

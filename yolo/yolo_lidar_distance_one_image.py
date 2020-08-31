@@ -61,7 +61,7 @@ def write(x, img):
     t_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_PLAIN, 1 , 1)[0]
     c2 = c1[0] + t_size[0] + 3, c1[1] + t_size[1] + 4
     cv2.rectangle(img, c1, c2,color, -1)
-    cv2.putText(img, label, (c1[0], c1[1] + t_size[1] + 4), cv2.FONT_HERSHEY_PLAIN, 1, [225,255,255], 1);
+    cv2.putText(img, label, (c1[0], c1[1] + t_size[1] + 4), cv2.FONT_HERSHEY_PLAIN, 1, [225,255,255], 1)
     return img
 
 
@@ -107,6 +107,20 @@ if __name__ == '__main__':
     prj_model = CameraModel(my_params.model_dir, my_params.image_dir)
     poses_file = my_params.poses_file
     extrinsics_dir  =  my_params.extrinsics_dir
+    intrinsics_path = my_params.project_patch + 'models\\stereo_narrow_left.txt'
+
+    with open(intrinsics_path) as intrinsics_file:
+        vals = [float(x) for x in next(intrinsics_file).split()]
+        focal_length = (vals[0], vals[1])
+        principal_point = (vals[2], vals[3])
+
+        G_camera_image = []
+        for line in intrinsics_file:
+            G_camera_image.append([float(x) for x in line.split()])
+        G_camera_image = np.array(G_camera_image)
+
+    print('(f1,f2) =', focal_length)
+    print('(c1,c2) =', principal_point)
 
     with open(os.path.join(os.path.join(my_params.extrinsics_dir, camera + '.txt'))) as extrinsics_file:
         extrinsics = [float(x) for x in next(extrinsics_file).split(' ')]
@@ -119,7 +133,7 @@ if __name__ == '__main__':
     # Get image form timestamp
     with open(camera_timestamps_path) as timestamps_file:
         for i, line in enumerate(timestamps_file):
-            if (i < 1570):
+            if (i < 2560):
                 continue
             image_timestamp = int(line.split(' ')[0])
             image_path = os.path.join(my_params.image_dir, str(image_timestamp) + '.png')
@@ -149,13 +163,17 @@ if __name__ == '__main__':
 
     print('Now process with image')
 
+    scale = 1
+    width, height = (1280, 960) # width, height = frame.shape[1], frame.shape[0]
+    dim = (int(scale*width), int(scale*height))
+
     # Set input image
     frame_patch = os.path.join(my_params.reprocess_image_dir + '//' + str(image_timestamp) + '.png')
     frame = cv2.imread(frame_patch)   # must processed imagte
-    
-    # scale = 0.5
-    width, height = frame.shape[1], frame.shape[0]
-    # dim = (int(scale*width), int(scale*height))
+    # resize
+    frame= cv2.rectangle(frame,(np.float32(50),np.float32(np.shape(frame)[0])),(np.float32(1250),np.float32(800)),(0,0,0),-1)
+    frame = cv2.resize(frame,dim)
+    # resize
     
     pframe = frame.copy()
     pcloud = np.zeros((height,width),dtype=float)
@@ -179,7 +197,6 @@ if __name__ == '__main__':
     
     with torch.no_grad():   
         output = model(Variable(img), CUDA)
-
     output = write_results(output, confidence, num_classes, nms = True, nms_conf = nms_thesh)
     im_dim = im_dim.repeat(output.size(0), 1)
     scaling_factor = torch.min(inp_dim/im_dim,1)[0].view(-1,1)
@@ -193,7 +210,7 @@ if __name__ == '__main__':
         output[i, [1,3]] = torch.clamp(output[i, [1,3]], 0.0, im_dim[i,0])
         output[i, [2,4]] = torch.clamp(output[i, [2,4]], 0.0, im_dim[i,1])
     
-    classes = load_classes(my_params.yolo_data + 'coco.names')
+    classes = load_classes(my_params.yolo_data + 'fix.names')
     colors = pkl.load(open(my_params.yolo_data + "pallete", "rb"))
    
     # Prediction image 
@@ -214,6 +231,10 @@ if __name__ == '__main__':
     print('Number of bbox',output.shape[0])
     bframe = frame.copy()
 
+
+    output_objs = []
+    plt.figure()
+    plt.scatter(0,0,c='r',marker='o', zorder=0)
     # list(map(lambda x: print(x), output))
     for i in range(int(output.shape[0])):
         # print(output[i,:])
@@ -224,19 +245,43 @@ if __name__ == '__main__':
         cls = int(x[-1])  
         label = "{0}".format(classes[cls])
         cv2.putText(bframe, label, (c1[0], c2[1]), cv2.FONT_HERSHEY_PLAIN, 1, [0,0,255], 2)
-        print(label)
+        
 
         rec = pcloud[c1[1]:c2[1],c1[0]:c2[0]] #(y,x)
-        dis = '{:06.2f}'.format(10*np.mean(rec))
-        print(dis)
+        dis = '{:06.2f}'.format(np.max(rec))
+
         cv2.putText(bframe, str(dis)+' m', (c1[0], c2[1]-30), cv2.FONT_HERSHEY_PLAIN, 1, [0,0,255], 2)
+
+                
+        crop_img = frame[x[2].int():x[4].int(),x[1].int():x[3].int()]
+    
+
+        obj_v = int((x[2].int()+x[4].int())/2)
+        # obj_x = '{:06.2f}'.format(obj_x)
+
+        obj_u = int((x[1].int()+x[3].int())/2)
+        # obj_y = '{:06.2f}'.format(obj_y)
+        
+        # print(label, ':',obj_v, obj_u, '-', dis)
+
+        # cv2.imshow(str(i),np.array(crop_img))
+        # cv2.waitKey(5)
+
+        obj_x = (obj_u - principal_point[0])*float(dis)/focal_length[0] 
+        obj_y = (obj_v - principal_point[1])*float(dis)/focal_length[1]
+
+        print(obj_x,obj_y)
+
+        plt.scatter(float(obj_x),float(dis),c='b',marker='.', zorder=1)
+
+    plt.show()
 
     cv2.imshow("bframe", bframe)
 
-# Save lidar np matrix
-    np.savetxt(output_lidar_patch + str(image_timestamp) +'.csv', pcloud, delimiter=",")
-# Save output yolo
-    np.savetxt(output_yolo_patch + str(image_timestamp) +'.csv', output, delimiter=",")
+    # Save lidar np matrix
+    # np.savetxt(output_lidar_patch + str(image_timestamp) +'.csv', pcloud, delimiter=",")
+    # Save output yolo
+    # np.savetxt(output_yolo_patch + str(image_timestamp) +'.csv', output, delimiter=",")
 
 
 

@@ -61,8 +61,12 @@ def write(x, img):
     t_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_PLAIN, 1 , 1)[0]
     c2 = c1[0] + t_size[0] + 3, c1[1] + t_size[1] + 4
     cv2.rectangle(img, c1, c2,color, -1)
-    cv2.putText(img, label, (c1[0], c1[1] + t_size[1] + 4), cv2.FONT_HERSHEY_PLAIN, 1, [225,255,255], 1);
+    cv2.putText(img, label, (c1[0], c1[1] + t_size[1] + 4), cv2.FONT_HERSHEY_PLAIN, 1, [225,255,255], 1)
     return img
+
+
+BACKUP_DATA = 1
+VIEW_IMAGE = 1
 
 
 if __name__ == '__main__':
@@ -96,6 +100,13 @@ if __name__ == '__main__':
         
     model(get_test_input(inp_dim, CUDA), CUDA)
     model.eval()
+
+    classes = load_classes(my_params.yolo_data + 'fix.names')
+    colors = pkl.load(open(my_params.yolo_data + "pallete", "rb"))
+
+    scale = 0.25
+    width, height = (1280, 960)
+    dim = (int(scale*width), int(scale*height))
 
     # Lidar intial and camera pose
     lidar = re.search('(lms_front|lms_rear|ldmrs|velodyne_left|velodyne_right)', my_params.laser_dir).group(0)
@@ -136,8 +147,6 @@ if __name__ == '__main__':
                         end_time = image_timestamp + 2e6    # default 5e6
                         print('Lidar available')
                         break
-            # break
-
             lidar_timestamps_file.close()
 
             pointcloud, reflectance = build_pointcloud(my_params.laser_dir, poses_file, extrinsics_dir, 
@@ -145,15 +154,15 @@ if __name__ == '__main__':
             pointcloud = np.dot(G_camera_posesource, pointcloud)               
             uv, depth = prj_model.project(pointcloud, image.shape)
 
-            # print('Now process with image')
+            print('Now process with image')
 
             # Set input image
             frame_patch = os.path.join(my_params.reprocess_image_dir + '//' + str(image_timestamp) + '.png')
             frame = cv2.imread(frame_patch)   # must processed imagte
-    
-            # scale = 0.5
-            width, height = frame.shape[1], frame.shape[0]
-            # dim = (int(scale*width), int(scale*height))
+            frame= cv2.rectangle(frame,(np.float32(50),np.float32(np.shape(frame)[0])),(np.float32(1250),np.float32(800)),(0,0,0),-1)
+            frame = cv2.resize(frame,dim)
+
+
     
             pframe = frame.copy()
             pcloud = np.zeros((height,width),dtype=float)
@@ -188,9 +197,7 @@ if __name__ == '__main__':
                 output[i, [1,3]] = torch.clamp(output[i, [1,3]], 0.0, im_dim[i,0])
                 output[i, [2,4]] = torch.clamp(output[i, [2,4]], 0.0, im_dim[i,1])
             
-            classes = load_classes(my_params.yolo_data + 'coco.names')
-            colors = pkl.load(open(my_params.yolo_data + "pallete", "rb"))
-   
+
             # Prediction origin image only
             # list(map(lambda x: write(x, orig_im), output))   
             # cv2.imshow("frame", orig_im)

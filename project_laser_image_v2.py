@@ -26,7 +26,7 @@ from camera_model import CameraModel
 import my_params
 
 image_dir = my_params.image_dir
-laser_dir = my_params.laser_dir
+laser_dir = my_params.lmsfront_dir
 poses_file = my_params.poses_file
 models_dir = my_params.model_dir
 extrinsics_dir = my_params.extrinsics_dir
@@ -67,7 +67,7 @@ with open(timestamps_path) as timestamps_file:
 # print('end time:', end_time)
 
 pointcloud, reflectance = build_pointcloud(laser_dir, poses_file, extrinsics_dir,
-                                           timestamp - 2e6, timestamp + 2e6, timestamp)
+                                           timestamp - 5e7, timestamp + 5e7, timestamp)
 
 pointcloud = np.dot(G_camera_posesource, pointcloud)
 

@@ -89,11 +89,13 @@ if __name__ == '__main__':
     model.eval()
     
     frame = cv2.imread(my_params.yolo_test_img)
-    # scale = 0.5
-    # width, height = frame.shape[1], frame.shape[0]
-    # dim = (int(scale*width), int(scale*height))
-    # frame = cv2.resize(frame,dim)
-
+    scale = 0.5
+    width, height = frame.shape[1], frame.shape[0]
+    dim = (int(scale*width), int(scale*height))
+    # resize
+    frame= cv2.rectangle(frame,(np.float32(50),np.float32(np.shape(frame)[0])),(np.float32(1250),np.float32(800)),(0,0,0),-1)
+    frame = cv2.resize(frame,dim)
+    # resize
     img, orig_im, dim = prep_image(frame, inp_dim)
     im_dim = torch.FloatTensor(dim).repeat(1,2)                        
     
@@ -104,8 +106,6 @@ if __name__ == '__main__':
     with torch.no_grad():   
         output = model(Variable(img), CUDA)
     output = write_results(output, confidence, num_classes, nms = True, nms_conf = nms_thesh)
-
-  
     im_dim = im_dim.repeat(output.size(0), 1)
     scaling_factor = torch.min(inp_dim/im_dim,1)[0].view(-1,1)
     

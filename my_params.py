@@ -37,3 +37,8 @@ yolo_data = project_patch +'yolo\\data\\'
 yolo_reso = 416          # default = "416"
 
 yolo_test_img = project_patch + 'yolo\\test_img\\hinh-1.jpg'
+
+output_vo_points_user = backup_dir + '\\'+ dataset_no + '_vo_points.csv'
+output_vo_points_admin = backup_dir + '\\'+ dataset_no + '_vo_admin.csv'
+
+lmsfront_dir = dataset_patch + 'lms_front'
