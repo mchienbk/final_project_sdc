@@ -48,7 +48,6 @@ def interpolate_poses():
     print(test_pose)
     print(abs_poses[11])
 
-
 ### pose transform test
 def pose_transform():
 
@@ -79,8 +78,6 @@ def pose_transform():
     x_test=H_new[0,3]
     z_test=H_new[2,3]
     print("new",(x_test,z_test))
-
-
 
 ### generate pose from vo test
 def pose_from_vo():
@@ -126,7 +123,6 @@ def pose_from_vo():
             plt.pause(0.01)
             # plt.legend(['Built-In','Our Code'])
         plt.show()
-
 
 # ### DRAW IMAGE CV2
 def draw_test():
@@ -207,7 +203,7 @@ def get_camera_ins():
     # V = d*x + e*y + f*z
     # 1 = g*x + h*y + i*z
 
-def test_map():
+def draw_map():
     import random
 
     map = np.zeros((100,50),dtype=bool)
@@ -226,10 +222,29 @@ def test_map():
     
     plt.show()
 
+def cal_distribute():
+
+    import numpy as np
+    from scipy.stats import norm
+    data = np.array([1,2,3,1,3,3,4,1,2,3,4,5,6,3,5,6,3,3,4,5,1,6,4,4,3,2,1,3,4,5,6,5,4,3,4,5])
     
+    mu, std = norm.fit(data)
+    print(mu, std)
+
+def save_array_csv():
+    import random
+    map = np.zeros((100,50),dtype=bool)
+    i = 0; j = 0
+    for i in range(100):
+        for j in range(50):
+            map[i,j] = random.randint(a=0,b=1)
+    # print(map[:10,:10])
+    np.savetxt('output//test_csv_file_save.csv', map, delimiter=",")
+
 if __name__ == "__main__":
 
-    get_camera_ins()
+    # cal_distribute()
+    save_array_csv()
 
     print('Done!')
     

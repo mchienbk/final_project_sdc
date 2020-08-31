@@ -15,6 +15,7 @@ from util import *
 from darknet import Darknet
 from preprocess import prep_image, inp_to_image, letterbox_image
 from datetime import datetime as dt
+from scipy.stats import norm
 
 
 sys.path.append('D:/Github/final_project_sdc')
@@ -231,7 +232,7 @@ if __name__ == '__main__':
     print('Number of bbox',output.shape[0])
     bframe = frame.copy()
 
-
+    object_data = []
     output_objs = []
     plt.figure()
     plt.scatter(0,0,c='r',marker='o', zorder=0)
@@ -247,33 +248,37 @@ if __name__ == '__main__':
         cv2.putText(bframe, label, (c1[0], c2[1]), cv2.FONT_HERSHEY_PLAIN, 1, [0,0,255], 2)
         
 
-        rec = pcloud[c1[1]:c2[1],c1[0]:c2[0]] #(y,x)
-        dis = '{:06.2f}'.format(np.max(rec))
+        # rec = pcloud[c1[1]:c2[1],c1[0]:c2[0]] #(y,x)
+        rec = pcloud[x[2].int():x[4].int(),x[1].int():x[3].int()]
+        # rec = rec.ravel()
+        rec = rec.flatten()
+
+        in_obj = [i for i in range(0, len(rec)) if rec[i] > 0]
+        rec = rec[in_obj]
+
+        # recs = np.array(rec)
+        dis, std = norm.fit(rec)
 
         cv2.putText(bframe, str(dis)+' m', (c1[0], c2[1]-30), cv2.FONT_HERSHEY_PLAIN, 1, [0,0,255], 2)
 
-                
         crop_img = frame[x[2].int():x[4].int(),x[1].int():x[3].int()]
-    
+        object_data.append(crop_img)
 
         obj_v = int((x[2].int()+x[4].int())/2)
-        # obj_x = '{:06.2f}'.format(obj_x)
-
         obj_u = int((x[1].int()+x[3].int())/2)
-        # obj_y = '{:06.2f}'.format(obj_y)
         
-        # print(label, ':',obj_v, obj_u, '-', dis)
-
-        # cv2.imshow(str(i),np.array(crop_img))
-        # cv2.waitKey(5)
-
         obj_x = (obj_u - principal_point[0])*float(dis)/focal_length[0] 
         obj_y = (obj_v - principal_point[1])*float(dis)/focal_length[1]
 
-        print(obj_x,obj_y)
+        print(label, ':', obj_x, obj_y, dis)
+        # print(obj_x,obj_y)
 
         plt.scatter(float(obj_x),float(dis),c='b',marker='.', zorder=1)
+        plt.text(float(obj_x)-5,float(dis)+2, label)
 
+    axes = plt.gca()
+    axes.set_xlim([-30,30])
+    axes.set_ylim([-5,55])
     plt.show()
 
     cv2.imshow("bframe", bframe)
