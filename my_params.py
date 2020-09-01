@@ -16,8 +16,13 @@ laser_dir = dataset_patch + 'ldmrs'
 model_dir = project_patch + 'models'
 extrinsics_dir = project_patch + 'extrinsics'
 reprocess_image_dir = image_dir + '_processed'
+
 output_dir = project_patch + 'output'
 backup_dir = project_patch + 'backup'
+
+output_dir2 = 'D:\\Dataset\\Output\\' 
+backup_dir2 = 'D:\\Dataset\\Backup\\' 
+
 if (dataset_no== '20151030'):
     xyzrpy = [0, 0, 0, 0.0128231,-0.0674645,-0.9233687]
 else:
@@ -25,6 +30,7 @@ else:
 # Data file directory
 model = model_dir + camera_name
 poses_file = dataset_patch + 'vo\\vo.csv'
+rtk_file = dataset_patch + 'rtk\\rtk.csv'
 
 # YOLO v3 Video Detection Module
 yolo_video = "video.avi"
@@ -38,7 +44,8 @@ yolo_reso = 416          # default = "416"
 
 yolo_test_img = project_patch + 'yolo\\test_img\\hinh-1.jpg'
 
-output_vo_points_user = backup_dir + '\\'+ dataset_no + '_vo_points.csv'
+output_vo_points_user  = backup_dir + '\\'+ dataset_no + '_vo_points.csv'
 output_vo_points_admin = backup_dir + '\\'+ dataset_no + '_vo_admin.csv'
 
 lmsfront_dir = dataset_patch + 'lms_front'
+lmsrear_dir  = dataset_patch + 'lms_rear'

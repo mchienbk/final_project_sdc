@@ -97,6 +97,12 @@ if __name__ == '__main__':
         
     model(get_test_input(inp_dim, CUDA), CUDA)
     model.eval()
+    
+    classes = load_classes(my_params.yolo_data + 'fix.names')
+    colors = pkl.load(open(my_params.yolo_data + "pallete", "rb"))
+    scale = 1
+    width, height = (1280, 960)
+    dim = (int(scale*width), int(scale*height))
 
     # Lidar intial and camera pose
     lidar = re.search('(lms_front|lms_rear|ldmrs|velodyne_left|velodyne_right)', my_params.laser_dir).group(0)
@@ -163,11 +169,6 @@ if __name__ == '__main__':
     uv, depth = prj_model.project(pointcloud, image.shape)
 
     print('Now process with image')
-
-    scale = 1
-    width, height = (1280, 960) # width, height = frame.shape[1], frame.shape[0]
-    dim = (int(scale*width), int(scale*height))
-
     # Set input image
     frame_patch = os.path.join(my_params.reprocess_image_dir + '//' + str(image_timestamp) + '.png')
     frame = cv2.imread(frame_patch)   # must processed imagte
@@ -186,8 +187,6 @@ if __name__ == '__main__':
         x_lidar = (int)(np.ravel(uv[:,k])[0])
         y_lidar = (int)(np.ravel(uv[:,k])[1])
         pcloud[y_lidar,x_lidar] = float(depth[k])
-
-    ##### SAVE POINT CLOUD to FILE ?????? ######
 
     img, orig_im, dim = prep_image(frame, inp_dim)
     im_dim = torch.FloatTensor(dim).repeat(1,2)                        
@@ -211,8 +210,6 @@ if __name__ == '__main__':
         output[i, [1,3]] = torch.clamp(output[i, [1,3]], 0.0, im_dim[i,0])
         output[i, [2,4]] = torch.clamp(output[i, [2,4]], 0.0, im_dim[i,1])
     
-    classes = load_classes(my_params.yolo_data + 'fix.names')
-    colors = pkl.load(open(my_params.yolo_data + "pallete", "rb"))
    
     # Prediction image 
     # list(map(lambda x: write(x, orig_im), output))   
@@ -235,7 +232,7 @@ if __name__ == '__main__':
     object_data = []
     output_objs = []
     plt.figure()
-    plt.scatter(0,0,c='r',marker='o', zorder=0)
+    plt.scatter(0,0,c='r',marker='o', zorder=0) # original
     # list(map(lambda x: print(x), output))
     for i in range(int(output.shape[0])):
         # print(output[i,:])
@@ -247,7 +244,6 @@ if __name__ == '__main__':
         label = "{0}".format(classes[cls])
         cv2.putText(bframe, label, (c1[0], c2[1]), cv2.FONT_HERSHEY_PLAIN, 1, [0,0,255], 2)
         
-
         # rec = pcloud[c1[1]:c2[1],c1[0]:c2[0]] #(y,x)
         rec = pcloud[x[2].int():x[4].int(),x[1].int():x[3].int()]
         # rec = rec.ravel()
@@ -276,12 +272,13 @@ if __name__ == '__main__':
         plt.scatter(float(obj_x),float(dis),c='b',marker='.', zorder=1)
         plt.text(float(obj_x)-5,float(dis)+2, label)
 
+    cv2.imshow("bframe", bframe)
+
     axes = plt.gca()
     axes.set_xlim([-30,30])
     axes.set_ylim([-5,55])
     plt.show()
 
-    cv2.imshow("bframe", bframe)
 
     # Save lidar np matrix
     # np.savetxt(output_lidar_patch + str(image_timestamp) +'.csv', pcloud, delimiter=",")

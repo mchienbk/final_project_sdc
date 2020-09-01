@@ -15,6 +15,7 @@ from util import *
 from darknet import Darknet
 from preprocess import prep_image, inp_to_image, letterbox_image
 from datetime import datetime as dt
+from scipy.stats import norm
 
 
 sys.path.append('D:/Github/final_project_sdc')
@@ -103,8 +104,7 @@ if __name__ == '__main__':
 
     classes = load_classes(my_params.yolo_data + 'fix.names')
     colors = pkl.load(open(my_params.yolo_data + "pallete", "rb"))
-
-    scale = 0.25
+    scale = 1
     width, height = (1280, 960)
     dim = (int(scale*width), int(scale*height))
 
@@ -118,6 +118,20 @@ if __name__ == '__main__':
     prj_model = CameraModel(my_params.model_dir, my_params.image_dir)
     poses_file = my_params.poses_file
     extrinsics_dir  =  my_params.extrinsics_dir
+    intrinsics_path = my_params.project_patch + 'models\\stereo_narrow_left.txt'
+    
+    with open(intrinsics_path) as intrinsics_file:
+        vals = [float(x) for x in next(intrinsics_file).split()]
+        focal_length = (vals[0], vals[1])
+        principal_point = (vals[2], vals[3])
+
+        G_camera_image = []
+        for line in intrinsics_file:
+            G_camera_image.append([float(x) for x in line.split()])
+        G_camera_image = np.array(G_camera_image)
+
+    print('(f1,f2) =', focal_length)
+    print('(c1,c2) =', principal_point)
 
     with open(os.path.join(os.path.join(my_params.extrinsics_dir, camera + '.txt'))) as extrinsics_file:
         extrinsics = [float(x) for x in next(extrinsics_file).split(' ')]
@@ -134,6 +148,7 @@ if __name__ == '__main__':
                 continue
             image_timestamp = int(line.split(' ')[0])
             image_path = os.path.join(my_params.image_dir, str(image_timestamp) + '.png')
+            print('image_path',image_path)
             image = load_image(image_path, prj_model)
             
             print('Image available')
@@ -144,10 +159,12 @@ if __name__ == '__main__':
 
                     if (lidar_timestamps > image_timestamp):
                         start_time = image_timestamp
-                        end_time = image_timestamp + 2e6    # default 5e6
+                        end_time = image_timestamp + 5e6    # default 5e6
                         print('Lidar available')
                         break
+
             lidar_timestamps_file.close()
+            timestamps_file.close()
 
             pointcloud, reflectance = build_pointcloud(my_params.laser_dir, poses_file, extrinsics_dir, 
                                                                 start_time, end_time, lidar_timestamps)
@@ -155,15 +172,14 @@ if __name__ == '__main__':
             uv, depth = prj_model.project(pointcloud, image.shape)
 
             print('Now process with image')
-
             # Set input image
             frame_patch = os.path.join(my_params.reprocess_image_dir + '//' + str(image_timestamp) + '.png')
             frame = cv2.imread(frame_patch)   # must processed imagte
+            # resize
             frame= cv2.rectangle(frame,(np.float32(50),np.float32(np.shape(frame)[0])),(np.float32(1250),np.float32(800)),(0,0,0),-1)
             frame = cv2.resize(frame,dim)
-
-
-    
+            # resize
+   
             pframe = frame.copy()
             pcloud = np.zeros((height,width),dtype=float)
 
@@ -183,7 +199,6 @@ if __name__ == '__main__':
             
             with torch.no_grad():   
                 output = model(Variable(img), CUDA)
-
             output = write_results(output, confidence, num_classes, nms = True, nms_conf = nms_thesh)
             im_dim = im_dim.repeat(output.size(0), 1)
             scaling_factor = torch.min(inp_dim/im_dim,1)[0].view(-1,1)
@@ -198,7 +213,7 @@ if __name__ == '__main__':
                 output[i, [2,4]] = torch.clamp(output[i, [2,4]], 0.0, im_dim[i,1])
             
 
-            # Prediction origin image only
+            # Prediction image 
             # list(map(lambda x: write(x, orig_im), output))   
             # cv2.imshow("frame", orig_im)
 
@@ -210,13 +225,16 @@ if __name__ == '__main__':
                 pframe= cv2.circle(pframe, (x_lidar, y_lidar), 1, color, 1) 
             
             list(map(lambda x: write(x, pframe), output))   
-            cv2.imshow("output", pframe)
+            # cv2.imshow("output", pframe)
 
             # Output bbox
-            # print('Number of bbox',output.shape[0])
-            bframe = frame.copy()
+            print('Number of bbox',output.shape[0])
+            bframe = pframe.copy()
 
-            # Draw distance on image
+            object_data = []
+            output_objs = []
+            plt.figure()
+            plt.scatter(0,0,c='r',marker='o', zorder=0) # original
             # list(map(lambda x: print(x), output))
             for i in range(int(output.shape[0])):
                 # print(output[i,:])
@@ -226,23 +244,53 @@ if __name__ == '__main__':
                 cv2.rectangle(bframe, c1, c2, (255,0,0), 1)
                 cls = int(x[-1])  
                 label = "{0}".format(classes[cls])
-                cv2.putText(bframe, label, (c1[0], c2[1]), cv2.FONT_HERSHEY_PLAIN, 1, [0,0,255], 2)
-                print(label)
+                # cv2.putText(bframe, label, (c1[0], c2[1]), cv2.FONT_HERSHEY_PLAIN, 1, [0,0,255], 2)
 
-                rec = pcloud[c1[1]:c2[1],c1[0]:c2[0]] #(y,x)
-                dis = '{:06.2f}'.format(10*np.mean(rec))
-                print(dis)
-                cv2.putText(bframe, str(dis)+' m', (c1[0], c2[1]-30), cv2.FONT_HERSHEY_PLAIN, 1, [0,0,255], 2)
+                 # rec = pcloud[c1[1]:c2[1],c1[0]:c2[0]] #(y,x)
+                rec = pcloud[x[2].int():x[4].int(),x[1].int():x[3].int()]
+                # rec = rec.ravel()
+                rec = rec.flatten()
 
+                in_obj = [i for i in range(0, len(rec)) if rec[i] > 0]
+                rec = rec[in_obj]
+
+                # recs = np.array(rec)
+                dis, std = norm.fit(rec)
+
+                cv2.putText(bframe, str(dis)+' m', (c1[0], c2[1]-30), cv2.FONT_HERSHEY_PLAIN, 1, [0,0,255], 1)
+
+                crop_img = frame[x[2].int():x[4].int(),x[1].int():x[3].int()]
+                object_data.append(crop_img)
+
+                obj_v = int((x[2].int()+x[4].int())/2)
+                obj_u = int((x[1].int()+x[3].int())/2)
+                
+                obj_x = (obj_u - principal_point[0])*float(dis)/focal_length[0] 
+                obj_y = (obj_v - principal_point[1])*float(dis)/focal_length[1]
+
+                print(label, ':', obj_x, obj_y, dis)
+                # print(obj_x,obj_y)
+
+                plt.scatter(float(obj_x),float(dis),c='b',marker='.', zorder=1)
+                plt.text(float(obj_x)-5,float(dis)+2, label)
+            
             cv2.imshow("bframe", bframe)
 
+            axes = plt.gca()
+            axes.set_xlim([-30,30])
+            axes.set_ylim([-5,55])
+            plt.show()
+            plt.pause(0.1)
             # Save lidar np matrix
-            np.savetxt(output_lidar_patch + str(image_timestamp) +'.csv', pcloud, delimiter=",")
+            # np.savetxt(output_lidar_patch + str(image_timestamp) +'.csv', pcloud, delimiter=",")
             # Save output yolo
-            np.savetxt(output_yolo_patch + str(image_timestamp) +'.csv', output, delimiter=",")
+            # np.savetxt(output_yolo_patch + str(image_timestamp) +'.csv', output, delimiter=",")
 
-            key = cv2.waitKey(1)
+            key = cv2.waitKey(5)
+            plt.close()
             if key & 0xFF == ord('q'): break
+            if key & 0xFF != ord('q'): continue
+
 
     timestamps_file.close()
     print('done!')
