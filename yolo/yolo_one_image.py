@@ -19,7 +19,7 @@ sys.path.append('D:/Github/final_project_sdc')
 import my_params
 
 def get_test_input(input_dim, CUDA):
-    img = cv2.imread('yolo/test_img/car.jpg')
+    img = cv2.imread('yolo/test_img/bear.jpg')
     img = cv2.resize(img, (input_dim, input_dim)) 
     img_ =  img[:,:,::-1].transpose((2,0,1))
     img_ = img_[np.newaxis,:,:,:]/255.0
@@ -64,7 +64,6 @@ if __name__ == '__main__':
     confidence = float(my_params.yolo_confidence)
     nms_thesh = float(my_params.yolo_nms_thresh)
 
-    start = 0
     CUDA = torch.cuda.is_available()
 
     num_classes = 80
@@ -99,6 +98,7 @@ if __name__ == '__main__':
     img, orig_im, dim = prep_image(frame, inp_dim)
     im_dim = torch.FloatTensor(dim).repeat(1,2)                        
     
+    start = time.time()
     if CUDA:
         im_dim = im_dim.cuda()
         img = img.cuda()
@@ -122,7 +122,10 @@ if __name__ == '__main__':
     colors = pkl.load(open(my_params.yolo_data + "pallete", "rb"))
 
     list(map(lambda x: write(x, orig_im), output))
-        
+    
+
+    print("propress time is {:5.2f}".format((time.time() - start))) 
+
     cv2.imshow("frame", orig_im)
     key = cv2.waitKey(0)
     if key & 0xFF == ord('q'):

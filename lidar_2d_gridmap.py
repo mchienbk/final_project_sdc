@@ -58,10 +58,11 @@ with open(vo_directory) as vo_file:
         # datetime = dt.utcfromtimestamp(timestamp/1000000)
        
         index += 1
-        if index > 3000 : 
-            end_time = timestamp
-            break
-  
+        # if index > 3000 : 
+        #     end_time = timestamp
+        #     break
+        # if index > 3000 : 
+
         xyzrpy = [float(v) for v in row[2:8]]
         rel_pose = build_se3_transform(xyzrpy)
         abs_pose = abs_poses[-1] * rel_pose

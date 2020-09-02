@@ -222,12 +222,12 @@ if __name__ == '__main__':
         color = (int(255-8*depth[k]),255-3*depth[k],50+3*depth[k])
         pframe= cv2.circle(pframe, (x_lidar, y_lidar), 1, color, 1) 
     
-    list(map(lambda x: write(x, pframe), output))   
-    cv2.imshow("output", pframe)
+    # list(map(lambda x: write(x, pframe), output))   
+    # cv2.imshow("output", pframe)
 
     # Output bbox
     print('Number of bbox',output.shape[0])
-    bframe = frame.copy()
+    bframe = pframe.copy()
 
     object_data = []
     output_objs = []
@@ -235,27 +235,32 @@ if __name__ == '__main__':
     plt.scatter(0,0,c='r',marker='o', zorder=0) # original
     # list(map(lambda x: print(x), output))
     for i in range(int(output.shape[0])):
-        # print(output[i,:])
+
         x = output[i,:]
         c1 = tuple(x[1:3].int())    
         c2 = tuple(x[3:5].int())
-        cv2.rectangle(bframe, c1, c2, (255,0,0), 1)
         cls = int(x[-1])  
         label = "{0}".format(classes[cls])
-        cv2.putText(bframe, label, (c1[0], c2[1]), cv2.FONT_HERSHEY_PLAIN, 1, [0,0,255], 2)
+
+        if (label == '0' ): continue
+    
+        color = random.choice(colors)
+        cv2.rectangle(bframe, c1, c2,color, 1)
+        t_size = cv2.getTextSize(label, cv2.FONT_HERSHEY_PLAIN, 1 , 1)[0]
+        c2 = c1[0] + t_size[0] + 3, c1[1] + t_size[1] + 4
+        cv2.rectangle(bframe, c1, c2,color, -1)
+        cv2.putText(bframe, label, (c1[0], c1[1] + t_size[1] + 4), cv2.FONT_HERSHEY_PLAIN, 1, [225,255,255], 1)
         
-        # rec = pcloud[c1[1]:c2[1],c1[0]:c2[0]] #(y,x)
         rec = pcloud[x[2].int():x[4].int(),x[1].int():x[3].int()]
         # rec = rec.ravel()
         rec = rec.flatten()
 
         in_obj = [i for i in range(0, len(rec)) if rec[i] > 0]
         rec = rec[in_obj]
-
-        # recs = np.array(rec)
         dis, std = norm.fit(rec)
+        dis = '{:.2f}'.format(dis)
 
-        cv2.putText(bframe, str(dis)+' m', (c1[0], c2[1]-30), cv2.FONT_HERSHEY_PLAIN, 1, [0,0,255], 2)
+        cv2.putText(bframe, str(dis)+' m', (c1[0], c2[1]-30), cv2.FONT_HERSHEY_PLAIN, 1, [0,0,255], 1)
 
         crop_img = frame[x[2].int():x[4].int(),x[1].int():x[3].int()]
         object_data.append(crop_img)

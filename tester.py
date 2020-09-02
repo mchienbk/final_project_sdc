@@ -241,10 +241,30 @@ def save_array_csv():
     # print(map[:10,:10])
     np.savetxt('output//test_csv_file_save.csv', map, delimiter=",")
 
+def check_image():
+    import os
+    timestamps_path = os.path.join(my_params.dataset_patch + 'stereo.timestamps')
+
+    with open(timestamps_path) as timestamps_file:
+        for i, line in enumerate(timestamps_file):
+            if i > 5823: break
+            # if i <15: continue
+            timestamp = int(line.split(' ')[0])
+            frame_path = os.path.join('D:\\Dataset\\Output\\pl_img_20151030\\' + str(timestamp) + '.png')
+            print('process image ',i,'-',timestamp)
+
+            with open(frame_path) as frame: print('.')
+            frame.close()
+
+
 if __name__ == "__main__":
 
     # cal_distribute()
-    save_array_csv()
+    # check_image()
+
+    # data = np.loadtxt(ldrms_filename, delimiter=',')
+    # cv2.imshow('image',data)
+    # cv2.waitKey(0)
 
     print('Done!')
     
